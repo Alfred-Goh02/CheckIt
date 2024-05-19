@@ -2,10 +2,13 @@ import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { Pressable, View, Text, StyleSheet, Image } from 'react-native';
+import { Pressable, View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 import Colors from '@/src/constants/Colors';
 import { useColorScheme } from '@/src/components/useColorScheme';
+
+import BusTiming from './busTime';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -15,7 +18,7 @@ function TabBarIcon(props: {
   return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
 }
 
-export default function TabLayout() {
+export default function HomeScreen() {
   const colorScheme = useColorScheme();
 
   return (
@@ -23,6 +26,8 @@ export default function TabLayout() {
       <Logomodal />
       <Welcomeuser />
       <Icons />
+       {/* Render the TestPage component */}
+      <BusTiming />
     </View>
   );
 }
@@ -64,6 +69,8 @@ const Welcomeuser = () => {
 }
 
 const Icons = () => {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.IconsContainer}>
       <View style={styles.iconWrapper}>
@@ -72,12 +79,14 @@ const Icons = () => {
           Parking Availability
         </Text>
       </View>
-      <View style={styles.iconWrapper}>
-        <FontAwesome5 name="bus" size={40} color="black" />
-        <Text style={styles.iconText}>
-          Bus
-        </Text>
-      </View>
+      <TouchableOpacity onPress={() => navigation.navigate('Bus Timing')}>
+        <View style={styles.iconWrapper}>
+          <FontAwesome5 name="bus" size={40} color="black" />
+          <Text style={styles.iconText}>
+            Bus
+          </Text>
+        </View>
+      </TouchableOpacity>
       <View style={styles.iconWrapper}>
         <FontAwesome5 name="taxi" size={40} color="black" />
         <Text style={styles.iconText}>
@@ -139,4 +148,3 @@ const styles = StyleSheet.create({
   },
 });
 
-//export default TabLayout;
