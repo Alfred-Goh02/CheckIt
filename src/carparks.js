@@ -12,9 +12,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  *Also to set favourites as the first few to pop out ? 
  *Create env to hide API account key ? */ 
 
-// Main CarPark component
 export default function CarPark() {
-  // Navigation hook
+
   const navigation = useNavigation();
 
   // State variables
@@ -150,7 +149,7 @@ export default function CarPark() {
   // Paginate the filtered car parks
   const displayedCarParks = filteredCarParks.slice(0, currentPage * carParksPerPage);
 
-  // Load more car parks when the load more button is pressed
+  // Load more car parks when pressed
   const handleLoadMore = () => {
     setCurrentPage(prevPage => prevPage + 1);
   };
@@ -192,7 +191,7 @@ export default function CarPark() {
   );
 }
 
-// Header component for the car park page
+// Header component 
 const Header = () => {
   return (
     <View style={styles.header}>
