@@ -1,173 +1,387 @@
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { Ionicons } from '@expo/vector-icons';
-import { Entypo } from '@expo/vector-icons';
-import { AntDesign } from '@expo/vector-icons';
-import { Link } from 'expo-router';
-import { Pressable, View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { Pressable, View, Text, StyleSheet, ScrollView, TextInput, ActivityIndicator, Button } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
 import Svg, { Path } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
+export default function BusStop() {
+    const navigation = useNavigation();
 
+    // State variables
+    const [busStops, setBusStops] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const busStopsPerPage = 10;
 
-const BusTime = ({ navigation }) => {
+    // Fetch data on component mount
+    useEffect(() => {
+        fetchData();
+        const interval = setInterval(fetchData, 60000); // Fetch data every 60 seconds
+
+        return () => clearInterval(interval); // Cleanup interval on unmount
+    }, []);
+
+    // Fetch data from the Bus Stop API
+    const fetchData = async () => {
+        try {
+            const [response, favs, dropdowns] = await Promise.all([
+                axios.get('http://datamall2.mytransport.sg/ltaodataservice/BusStops', {
+                    headers: {
+                        'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+                        'Accept': 'application/json',
+                    },
+                }),
+                AsyncStorage.getItem('busStopFavourites'),
+                AsyncStorage.getItem('busStopDropdowns'),
+            ]);
+
+            const favouriteBusStops = favs ? JSON.parse(favs) : {};
+            const dropdownStates = dropdowns ? JSON.parse(dropdowns) : {};
+
+            if (response.data && response.data.value) {
+                const busStopData = response.data.value.map(stop => ({
+                    name: stop.Description,
+                    codeName: stop.BusStopCode,
+                    roadName: stop.RoadName,
+                    latitude: stop.Latitude,  // lat and long not used but just kept for ref
+                    longitude: stop.Longitude,
+                    isFavourite: !!favouriteBusStops[stop.Description],
+                    isOpen: !!dropdownStates[stop.Description],
+                }));
+
+                setBusStops(busStopData);
+            } else {
+                console.error('Error: Response data structure is not as expected', response.data);
+            }
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching bus stop info:', error);
+            setLoading(false);
+        }
+    };
+
+    // Fetch data from the second API
+    const fetchArrival = async (busStopCode) => {
+        try {
+            const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2`, {
+                params: {
+                    BusStopCode: busStopCode,
+                },
+                headers: {
+                    'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+                    'Accept': 'application/json',
+                },
+            });
+
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching arrival data:', error);
+            return null;
+        }
+    };
+
+    // Process bus stop details
+    const processBusStopDetails = (response) => {
+        if (response && response.Services) {
+            return response.Services.map(service => ({
+                serviceNo: service.ServiceNo,
+                operator: service.Operator,
+                nextBuses: [
+                    {
+                        estimatedArrival: service.NextBus.EstimatedArrival,
+                        load: service.NextBus.Load,
+                        feature: service.NextBus.Feature,
+                        type: service.NextBus.Type,
+                    },
+                    {
+                        estimatedArrival: service.NextBus2.EstimatedArrival,
+                        load: service.NextBus2.Load,
+                        feature: service.NextBus2.Feature,
+                        type: service.NextBus2.Type,
+                    },
+                    {
+                        estimatedArrival: service.NextBus3.EstimatedArrival,
+                        load: service.NextBus3.Load,
+                        feature: service.NextBus3.Feature,
+                        type: service.NextBus3.Type,
+                    }
+                ]
+            }));
+        } else {
+            return [];
+        }
+    };
+
+    // Save favourites to AsyncStorage
+    const saveFavourites = async (updatedBusStops) => {
+        const favourites = updatedBusStops.reduce((acc, busStop) => {
+            if (busStop.isFavourite) {
+                acc[busStop.name] = true;
+            }
+            return acc;
+        }, {});
+
+        await AsyncStorage.setItem('busStopFavourites', JSON.stringify(favourites));
+    };
+
+    // Save dropdown states to AsyncStorage
+    const saveDropdowns = async (updatedBusStops) => {
+        const dropdowns = updatedBusStops.reduce((acc, busStop) => {
+            if (busStop.isOpen) {
+                acc[busStop.name] = true;
+            }
+            return acc;
+        }, {});
+
+        await AsyncStorage.setItem('busStopDropdowns', JSON.stringify(dropdowns));
+    };
+
+    // Toggle favourite state of a bus stop
+    const toggleFavourite = (name) => {
+        setBusStops(prevBusStops => {
+            const updatedBusStops = prevBusStops.map(busStop => {
+                if (busStop.name === name) {
+                    return { ...busStop, isFavourite: !busStop.isFavourite };
+                }
+                return busStop;
+            });
+
+            saveFavourites(updatedBusStops);
+            return updatedBusStops;
+        });
+    };
+
+    // Toggle dropdown state of a bus stop and fetch bus arrival details
+    const toggleDropdown = async (name, busStopCode) => {
+        setBusStops(prevBusStops => {
+            return prevBusStops.map(busStop => {
+                if (busStop.name === name) {
+                    busStop.isOpen = !busStop.isOpen;
+                    if (busStop.isOpen && !busStop.details) {
+                        busStop.loadingDetails = true;
+                    }
+                }
+                return busStop;
+            });
+        });
+
+        if (busStopCode) {
+            try {
+                const response = await fetchArrival(busStopCode);
+                const data = processBusStopDetails(response);
+
+                setBusStops(prevBusStops => {
+                    return prevBusStops.map(busStop => {
+                        if (busStop.name === name) {
+                            return { ...busStop, details: data, loadingDetails: false };
+                        }
+                        return busStop;
+                    });
+                });
+            } catch (error) {
+                console.error('Error fetching data for bus stop:', error);
+                setBusStops(prevBusStops => {
+                    return prevBusStops.map(busStop => {
+                        if (busStop.name === name) {
+                            return { ...busStop, loadingDetails: false };
+                        }
+                        return busStop;
+                    });
+                });
+            }
+        }
+    };
+
+    // Handle search query change
+    const handleSearchChange = (query) => {
+        setSearchQuery(query);
+
+        // Close all dropdowns when search query changes
+        setBusStops(prevBusStops =>
+            prevBusStops.map(busStop => ({ ...busStop, isOpen: false }))
+        );
+    };
+
+    // Function to close all dropdowns
+    const closeAllDropdowns = () => {
+        setBusStops(prevBusStops =>
+            prevBusStops.map(busStop => ({ ...busStop, isOpen: false }))
+        );
+    };
+
+    // Filter bus stops based on the search query
+    const filteredBusStops = busStops.filter(busStop =>
+        busStop.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Paginate the filtered bus stops
+    const displayedBusStops = filteredBusStops.slice(0, currentPage * busStopsPerPage);
+
+    // Load more bus stops when pressed
+    const handleLoadMore = () => {
+        setCurrentPage(prevPage => prevPage + 1);
+    };
+
+    // Handle navigation back press and close all dropdowns
+    const handleBackPress = () => {
+        navigation.goBack();
+        closeAllDropdowns();
+    };
+
+    // Show loading indicator while fetching data
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#0000ff" />
+            </View>
+        );
+    }
+
     return (
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
             <LinearGradient colors={["#F838D5", "#38C7F8"]} style={styles.container}>
-            <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-               <Ionicons name="arrow-back" size={28} color="white" />
-            </Pressable>
+                <Pressable style={styles.backButton} onPress={handleBackPress}>
+                    <Ionicons name="arrow-back" size={28} color="white" />
+                </Pressable>
                 <Header />
-                <SearchBar />
-                <BusStops />
+                <SearchBar value={searchQuery} onChangeText={handleSearchChange} />
+                <BusStopList
+                    busStops={displayedBusStops}
+                    toggleFavourite={toggleFavourite}
+                    toggleDropdown={toggleDropdown}
+                />
+                {filteredBusStops.length > displayedBusStops.length && (
+                    <Button title="Load More" onPress={handleLoadMore} />
+                )}
             </LinearGradient>
         </ScrollView>
     );
 }
 
-const Header = () => {
-    return (
-        <View style={styles.header}>
-            <Text style={styles.headerText}>Bus Stops</Text>
-        </View>
-    );
-};
+// Header component
+const Header = () => (
+    <View style={styles.header}>
+        <Text style={styles.headerText}>Bus Stops</Text>
+    </View>
+);
 
-const BusStops = () => {
-    // State to manage which bus stops are open
-    const [selectedBusStops, setSelectedBusStops] = useState([]);
- 
-    const busStops = [
-        {
-            name: "Bukit Panjang Interchange",
-            shortName: "BP INT",
-            distance: 190,
-            buses: [
-                { busno: 960, timings: [3, 7, 13] },
-                { busno: 972, timings: [5, 10, 15] },
-            ]
-        },
-        {
-            name: "Clementi Interchange",
-            shortName: "Clementi INT",
-            distance: 200,
-            buses: [
-                { busno: 96, timings: [5, 8, 15] },
-                { busno: 184, timings: [6, 12, 18] },
-            ]
-        },
-        {
-            name: "Opposite NUH",
-            shortName: "Opp NUH",
-            distance: 300,
-            buses: [
-                { busno: 95, timings: [2, 11, 20] },
-                { busno: 151, timings: [7, 14, 21] },
-            ]
-        },
-    ];
-
-    // Handle opening multiple dropdowns
-    const handleSelectBusStop = (index) => {
-        setSelectedBusStops(prevSelectedBusStops =>
-            prevSelectedBusStops.includes(index)
-                ? prevSelectedBusStops.filter(stop => stop !== index)
-                : [...prevSelectedBusStops, index]
+const BusStopList = ({ busStops, toggleFavourite, toggleDropdown }) => {
+    if (busStops.length === 0) {
+        return (
+            <View style={styles.noResults}>
+                <Text style={styles.noResultsText}>No Bus Stops found</Text>
+            </View>
         );
-    };
+    }
 
     return (
         <View>
             {busStops.map((busStop, index) => (
-                <View key={index}>
-                    <BusStop
-                        name={busStop.name}
-                        shortName={busStop.shortName}
-                        distance={busStop.distance}
-                        buses={busStop.buses}
-                        isOpen={selectedBusStops.includes(index)}
-                        onSelectBusStop={() => handleSelectBusStop(index)}
-                    />
+                <View key={index} style={styles.busStopWrapper}>
+                    <View style={styles.busStopContainer}>
+                        <Pressable style={styles.iconButton} onPress={() => toggleFavourite(busStop.name)}>
+                            <HeartIcon filled={busStop.isFavourite} />
+                        </Pressable>
+                        <Pressable style={styles.busStopDetails} onPress={() => toggleDropdown(busStop.name, busStop.codeName)}>
+                            <View style={styles.busStopRow}>
+                                <Text style={styles.busStopName}>{busStop.name}</Text>
+                                <Text style={styles.busStopRoadName}>{busStop.roadName}</Text>
+                            </View>
+                        </Pressable>
+                        <Pressable style={styles.iconButton} onPress={() => toggleDropdown(busStop.name, busStop.codeName)}>
+                            <Text style={styles.busStopCodeName}>{busStop.codeName}</Text>
+                            <FontAwesome5 name="sync-alt" size={24} color="black" style={{ marginLeft: 10 }} />
+                        </Pressable>
+                    </View>
+                    {busStop.isOpen && (
+                        <View style={styles.dropdownContent}>
+                            {busStop.loadingDetails ? (
+                                <ActivityIndicator size="small" color="#0000ff" />
+                            ) : busStop.details ? (
+                                busStop.details.map((service, idx) => (
+                                    <ServiceDetails key={idx} service={service} />
+                                ))
+                            ) : (
+                                <Text>No data available</Text>
+                            )}
+                        </View>
+                    )}
                 </View>
             ))}
         </View>
     );
 };
 
-const BusStop = ({ name, shortName, distance, buses, isOpen, onSelectBusStop }) => {
-    const [isFavourited, setIsFavourited] = useState(false);
+const ServiceDetails = ({ service }) => {
+    // Function to calculate minutes remaining for bus arrival
+    const getArrivalTimeInMins = (estimatedArrival) => {
+        const arrivalTime = new Date(estimatedArrival);
+        const currentTime = new Date();
+        const diffInMs = arrivalTime - currentTime;
+        const diffInMins = Math.floor(diffInMs / 60000); // round to int (eg. 3.49 = 3)
+        const textColor = getTextColor(load); 
+        return (
+            <Text style={[styles.arrivalTime, { color: textColor }]}>
+                {diffInMins > 0 ? diffInMins : 'Arr'}
+            </Text>
+        );
+    };
 
-    // Toggle favourite state
-    const toggleFavourite = () => {
-        setIsFavourited(!isFavourited);
+    // Function to determine text color based on load
+    const getTextColor = (load) => {
+        switch (load) {
+            case 'SEA':
+                return 'green'; 
+            case 'SDA':
+                return 'orange'; 
+            case 'LSD':
+                return 'red'; 
+            default:
+                return 'black'; // if load status is unknown
+        }
     };
 
     return (
-        <View style={styles.busStopWrapper}>
-            <View style={styles.busStopContainer}>
-                <Pressable style={styles.iconButton} onPress={toggleFavourite}>
-                    <HeartIcon filled={isFavourited} />
-                </Pressable>
-                <Pressable style={styles.busStopDetails} onPress={onSelectBusStop}>
-                    <View style={styles.busStopRow}>
-                        <Text style={styles.busStopName}>{name}</Text>
-                        <Text style={styles.busStopDistance}>{distance}m</Text>
-                    </View>
-                    <Text style={styles.busStopShortName}>{shortName}</Text>
-                </Pressable>
-                <Pressable style={styles.iconButton}>
-                    <FontAwesome5 name="sync-alt" size={24} color="black" />
-                </Pressable>
-            </View>
-            {isOpen && (
-                <View style={styles.dropdownContent}>
-                    {buses && buses.map((bus, busIndex) => (
-                        <View key={busIndex} style={styles.busTimingContainer}>
-                            <Text style={styles.busNumber}>Bus {bus.busno}</Text>
-                            <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-                                {bus.timings.map((timing, index) => (
-                                    <Text key={index} style={styles.timingText}>{timing} min</Text>
-                                ))}
-                            </ScrollView>
-                        </View>
-                    ))}
+        <View style={styles.serviceDetails}>
+            <Text style={styles.serviceName}>{service.serviceNo}</Text>
+            {service.nextBuses.map((bus, index) => (
+                <View key={index} style={styles.busDetails}>
+                    <Text style={styles.arrivalTime}>{getArrivalTimeInMins(bus.estimatedArrival)}</Text>
                 </View>
-            )}
+            ))}
         </View>
     );
 };
 
-const HeartIcon = ({ filled }) => {
-    return (
-        <Svg
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill={filled ? "red" : "none"}
-            stroke="red"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 
-            4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 
-            19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-        </Svg>
-    );
-};
+const HeartIcon = ({ filled }) => (
+    <Svg
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill={filled ? "red" : "none"}
+        stroke="red"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+        <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 
+               3 7.5 3c1.74 0 3.41.81 4.5 2.09C 13.09 3.81 14.76 3 16.5 3 
+               19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    </Svg>
+);
 
-const SearchBar = ({ value, onChangeText }) => {
-    return (
-        <TextInput
-            style={styles.searchBar}
-            value={value}
-            onChangeText={onChangeText}
-            placeholder="Search bus stops..."
-        />
-    );
-};
+const SearchBar = ({ value, onChangeText }) => (
+    <TextInput
+        style={styles.searchBar}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder="Enter bus stop name or code..."
+    />
+);
 
 const styles = StyleSheet.create({
     container: {
@@ -180,7 +394,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         marginLeft: 5,
     },
-    headerText:{
+    headerText: {
         color: 'white',
         fontSize: 24,
         fontWeight: 'bold',
@@ -192,29 +406,36 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#FFE4E1',
-        padding: 8,
+        padding: 4,
         borderRadius: 10,
     },
     busStopDetails: {
         flex: 1,
         marginLeft: 8,
     },
-    busStopRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
     busStopName: {
+        fontSize: 19,
+        fontWeight: 'bold',
+    },
+    busStopRow: {
+        flexDirection: 'column',
+    },
+    busStopCodeName: {
+        fontSize: 16,
+        color: '#606060',
+        marginBottom: 5,
+        marginRight: 5,
+    },
+    busStopRoadName: {
         fontSize: 18,
-    },
-    busStopDistance: {
-        fontSize: 16,
-    },
-    busStopShortName: {
-        fontSize: 16,
-        color: '#707070',
-    },
-    iconButton: {
-        padding: 8,
+        color: '#606060',
+        backgroundColor: 'rgba(128, 128, 128, 0.1)',
+        borderRadius: 5,
+        paddingVertical: 1,
+        paddingHorizontal: 5,
+        width: 'fit-content',
+        alignSelf: 'flex-start',
+        marginTop: 1,
     },
     searchBar: {
         backgroundColor: 'white',
@@ -223,25 +444,20 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         fontSize: 16,
     },
-    dropdownContent: {
-        backgroundColor: 'white',
-        padding: 10,
-        marginTop: 5,
-        borderRadius: 10,
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    busTimingContainer: {
-        marginBottom: 8,
+    noResults: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 50,
     },
-    busNumber: {
-        marginLeft: 15,
+    noResultsText: {
         fontSize: 20,
-    },
-    timingText: {
-        marginLeft: 26, // Padding to shift text to the right
-        fontSize: 18,
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        width: 100, // Adjust width as needed for uniform spacing
+        color: 'white',
     },
     backButton: {
         top: 10,
@@ -249,7 +465,34 @@ const styles = StyleSheet.create({
         zIndex: 10,
         marginBottom: 10,
     },
+    iconButton: {
+        padding: 8,
+    },
+    dropdownContent: {
+        backgroundColor: 'white',
+        padding: 10,
+        marginTop: 5,
+        borderRadius: 10,
+    },
+    serviceDetails: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 5,
+        marginBottom: 5,
+    },
+    serviceName: {
+        fontWeight: 'bold',
+        fontSize: 20,
+        marginLeft: 10,
+        flex: 1, // Ensures service name takes full available space
+    },
+    busDetails: {
+        flex: 1, // Ensures equal width for each bus details container
+        justifyContent: 'center', // Center the content horizontally
+        alignItems: 'center', // Center the content vertically
+    },
+    arrivalTime: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
 });
-
-export default BusTime;
-
