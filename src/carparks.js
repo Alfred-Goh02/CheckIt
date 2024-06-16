@@ -9,6 +9,7 @@ import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /* Left with using firebase and settle the close dropdowns permanently when search or click back to homepage 
+ *find if there are data avail for heavy veh & motorcycles separately
  *Also to set favourites as the first few to pop out ? 
  *Create env to hide API account key ? */ 
 
@@ -39,7 +40,7 @@ export default function CarPark() {
         axios.get('http://datamall2.mytransport.sg/ltaodataservice/CarParkAvailabilityv2', {
           headers: {
             'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
-            'accept': 'application/json',
+            'Accept': 'application/json',
           },
         }),
         AsyncStorage.getItem('favourites'),
@@ -202,6 +203,13 @@ const Header = () => {
 
 // List component to display car parks
 const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchData }) => {
+  // mapping lotTypes
+  const lotTypeMapping = {
+    C: 'Cars',
+    H: 'Heavy Vehicles',
+    Y: 'Motorcycles',
+  };
+
   if (carParks.length === 0) {
     return (
       <View style={styles.noResults}>
@@ -228,7 +236,7 @@ const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchData }) =
           </View>
           {carPark.isOpen && (
             <View style={styles.dropdownContent}>
-              <Text style={styles.carParkType}>Type: {carPark.lotType}</Text>
+              <Text style={styles.carParkType}>Type: {lotTypeMapping[carPark.lotType]}</Text>
               <Text style={styles.carParkAvailability}>Available: {carPark.spacesAvailable}</Text>
             </View>
           )}
@@ -305,12 +313,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   carParkType: {
-    fontSize: 16,
-    color: '#707070',
+    fontSize: 18,
+    color: 'black',
+   // fontWeight: 'bold',
   },
   carParkAvailability: {
-    fontSize: 16,
-    color: '#707070',
+    fontSize: 18,
+    color: 'black',
+  //  fontWeight: 'bold',
   },
   shortName: {
     fontSize: 15,
