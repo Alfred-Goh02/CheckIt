@@ -102,14 +102,14 @@ export default function BusStop() {
                         load: service.NextBus2.Load,
                         feature: service.NextBus2.Feature,
                         type: service.NextBus2.Type,
-                    },
+                    },  
                     {
                         estimatedArrival: service.NextBus3.EstimatedArrival,
                         load: service.NextBus3.Load,
                         feature: service.NextBus3.Feature,
                         type: service.NextBus3.Type,
                     }
-                ]
+                ] 
             }));
         } else {
             return [];
@@ -316,19 +316,23 @@ const BusStopList = ({ busStops, toggleFavourite, toggleDropdown }) => {
     );
 };
 
-const ServiceDetails = ({ service }) => {
+const ServiceDetails = ({ service, load }) => {
     // Function to calculate minutes remaining for bus arrival
     const getArrivalTimeInMins = (estimatedArrival) => {
-        const arrivalTime = new Date(estimatedArrival);
-        const currentTime = new Date();
-        const diffInMs = arrivalTime - currentTime;
-        const diffInMins = Math.floor(diffInMs / 60000); // round to int (eg. 3.49 = 3)
-        const textColor = getTextColor(load); 
-        return (
-            <Text style={[styles.arrivalTime, { color: textColor }]}>
-                {diffInMins > 0 ? diffInMins : 'Arr'}
-            </Text>
-        );
+        if (estimatedArrival !== "") {
+            const arrivalTime = new Date(estimatedArrival);
+            const currentTime = new Date();
+            const diffInMs = arrivalTime - currentTime;
+            const diffInMins = Math.floor(diffInMs / 60000); // round to int (eg. 3.49 = 3)
+            const textColor = load !== "" ? getTextColor(load) : 'black';
+            return (
+                <Text style={[styles.arrivalTime, { color: textColor }]}>
+                    {diffInMins > 0 ? diffInMins : 'Arr'}
+                </Text>
+            );
+        } else {
+            return <Text style={styles.arrivalTime}></Text>; // Display blank if no arrival
+        }
     };
 
     // Function to determine text color based on load
