@@ -28,13 +28,30 @@ export default function BusStop() {
     // Fetch data from the Bus Stop API
     const fetchData = async () => {
         try {
-            const [response, favs, dropdowns] = await Promise.all([
-                axios.get('http://datamall2.mytransport.sg/ltaodataservice/BusStops', {
-                    headers: {
-                        'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
-                        'Accept': 'application/json',
-                    },
-                }),
+            let allBusStops = [];
+            let skipValue = 0;
+            const batchSize = 500;
+            let toContinue = true;
+      
+            while (toContinue) {
+              const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/BusStops?$skip=${skipValue}`, {
+                headers: {
+                  'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+                  'Accept': 'application/json',
+                },
+              });
+      
+              const busStopData = response.data.value;
+      
+              if (busStopData.length > 0) {
+                allBusStops = allBusStops.concat(busStopData);
+                skipValue += batchSize;
+              } else {
+                toContinue = false;
+              }
+            }
+
+            const [favs, dropdowns] = await Promise.all([
                 AsyncStorage.getItem('busStopFavourites'),
                 AsyncStorage.getItem('busStopDropdowns'),
             ]);
@@ -42,21 +59,17 @@ export default function BusStop() {
             const favouriteBusStops = favs ? JSON.parse(favs) : {};
             const dropdownStates = dropdowns ? JSON.parse(dropdowns) : {};
 
-            if (response.data && response.data.value) {
-                const busStopData = response.data.value.map(stop => ({
-                    name: stop.Description,
-                    codeName: stop.BusStopCode,
-                    roadName: stop.RoadName,
-                    latitude: stop.Latitude,  // lat and long not used but just kept for ref
-                    longitude: stop.Longitude,
-                    isFavourite: !!favouriteBusStops[stop.Description],
-                    isOpen: !!dropdownStates[stop.Description],
-                }));
+            const formattedBusStops = allBusStops.map(stop => ({
+                name: stop.Description,
+                codeName: stop.BusStopCode,
+                roadName: stop.RoadName,
+                latitude: stop.Latitude,  // lat and long not used but just kept for ref
+                longitude: stop.Longitude,
+                isFavourite: !!favouriteBusStops[stop.Description],
+                isOpen: !!dropdownStates[stop.Description],
+            }));
 
-                setBusStops(busStopData);
-            } else {
-                console.error('Error: Response data structure is not as expected', response.data);
-            }
+            setBusStops(formattedBusStops);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching bus stop info:', error);
@@ -64,7 +77,7 @@ export default function BusStop() {
         }
     };
 
-    // Fetch data from the second API
+    // Fetch data from the bus arrival API
     const fetchArrival = async (busStopCode) => {
         try {
             const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2`, {
@@ -297,17 +310,16 @@ const BusStopList = ({ busStops, toggleFavourite, toggleDropdown }) => {
                             <FontAwesome5 name="sync-alt" size={24} color="black" style={{ marginLeft: 10 }} />
                         </Pressable>
                     </View>
-                    {busStop.isOpen && (
+                    {busStop.isOpen && !busStop.loadingDetails && busStop.details && busStop.details.length > 0 && (
                         <View style={styles.dropdownContent}>
-                            {busStop.loadingDetails ? (
-                                <ActivityIndicator size="small" color="#0000ff" />
-                            ) : busStop.details ? (
-                                busStop.details.map((service, idx) => (
-                                    <ServiceDetails key={idx} service={service} />
-                                ))
-                            ) : (
-                                <Text>No data available</Text>
-                            )}
+                            {busStop.details.map((service, idx) => (
+                                <ServiceDetails key={idx} service={service} />
+                            ))}
+                        </View>
+                    )}
+                    {busStop.loadingDetails && (
+                        <View style={styles.dropdownContent}>
+                            <ActivityIndicator size="small" color="#0000ff" />
                         </View>
                     )}
                 </View>
@@ -316,7 +328,7 @@ const BusStopList = ({ busStops, toggleFavourite, toggleDropdown }) => {
     );
 };
 
-const ServiceDetails = ({ service, load }) => {
+const ServiceDetails = ({ service }) => {
     // Function to calculate minutes remaining for bus arrival
     const getArrivalTimeInMins = (estimatedArrival) => {
         if (estimatedArrival !== "") {
@@ -324,22 +336,18 @@ const ServiceDetails = ({ service, load }) => {
             const currentTime = new Date();
             const diffInMs = arrivalTime - currentTime;
             const diffInMins = Math.floor(diffInMs / 60000); // round to int (eg. 3.49 = 3)
-            const textColor = load !== "" ? getTextColor(load) : 'black';
-            return (
-                <Text style={[styles.arrivalTime, { color: textColor }]}>
-                    {diffInMins > 0 ? diffInMins : 'Arr'}
-                </Text>
-            );
+            return diffInMins > 0 ? diffInMins : 'Arr';
         } else {
-            return <Text style={styles.arrivalTime}></Text>; // Display blank if no arrival
+            return ''; // Display blank if no arrival
         }
     };
 
     // Function to determine text color based on load
     const getTextColor = (load) => {
+        console.log('Load value:', load); 
         switch (load) {
             case 'SEA':
-                return 'green'; 
+                return '#32CD32'; 
             case 'SDA':
                 return 'orange'; 
             case 'LSD':
@@ -349,12 +357,47 @@ const ServiceDetails = ({ service, load }) => {
         }
     };
 
+    // Check for wheelchair access
+    const hasWAB = (feature) => {
+        return feature === 'WAB'; 
+    };
+
+    // Check Vehicle Type
+    const getVehType = (type) => {
+        switch (type) {
+            case 'SD':
+                return ''; // Single deck 
+            case 'DD':
+                return 'Double'; // Double deck
+            case 'BD':
+                return 'Bendy'; // Bendy 
+            default:
+                return ''; // Unknown
+        }
+    };
+
     return (
         <View style={styles.serviceDetails}>
             <Text style={styles.serviceName}>{service.serviceNo}</Text>
             {service.nextBuses.map((bus, index) => (
                 <View key={index} style={styles.busDetails}>
-                    <Text style={styles.arrivalTime}>{getArrivalTimeInMins(bus.estimatedArrival)}</Text>
+                    {bus.estimatedArrival ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={[styles.arrivalTime, { color: getTextColor(bus.load) }]}>
+                                {getArrivalTimeInMins(bus.estimatedArrival)}
+                            </Text>
+                            {hasWAB(bus.feature) && (
+                                <FontAwesome5 name="wheelchair" size={16} color="black" style={{ marginLeft: 5 }} />
+                            )}
+                            {bus.type && (
+                                <Text style={styles.vehicleType}>
+                                    {getVehType(bus.type)}
+                                </Text>
+                            )}
+                        </View>
+                    ) : (
+                        <Text style={styles.arrivalTime}>-</Text>
+                    )}
                 </View>
             ))}
         </View>
@@ -436,13 +479,13 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(128, 128, 128, 0.1)',
         borderRadius: 5,
         paddingVertical: 1,
-        paddingHorizontal: 5,
+        paddingHorizontal: 2,
         width: 'fit-content',
         alignSelf: 'flex-start',
         marginTop: 1,
     },
     searchBar: {
-        backgroundColor: 'white',
+        backgroundColor: '#FFFFF0',
         padding: 10,
         marginBottom: 12,
         borderRadius: 30,
@@ -473,7 +516,7 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     dropdownContent: {
-        backgroundColor: 'white',
+        backgroundColor: '#FFFFF0',
         padding: 10,
         marginTop: 5,
         borderRadius: 10,
@@ -498,5 +541,11 @@ const styles = StyleSheet.create({
     arrivalTime: {
         fontSize: 20,
         fontWeight: 'bold',
+    },
+    vehicleType: {
+        fontSize: 10,
+        color: '#606060',
+        marginTop: 5,
+        flexDirection: 'column',
     },
 });
