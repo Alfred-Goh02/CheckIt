@@ -4,12 +4,13 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { Pressable, View, Text, StyleSheet, Image, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 //import { Button } from 'react-native-elements';
 import { useAuth } from './Authprovider';
-
+import { useEffect } from 'react';
+import { BackHandler } from 'react-native';
 const Logomodal = () => {
   return (
     <View style={styles.container}>
@@ -113,6 +114,21 @@ const BtmIcons = () => {
 }
 
 const TabLayout = ({ navigation }) => {
+  useEffect(() => {
+    const backAction = () => {
+      // Disable Android back button
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
+  
   return (
     <LinearGradient colors={["#F838D5", "#38C7F8"]} style={styles.mainContainer}>
       <StatusBar backgroundColor="#F838D5" barStyle="light-content" />
