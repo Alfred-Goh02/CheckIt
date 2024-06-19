@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../src/Authprovider';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 
+
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

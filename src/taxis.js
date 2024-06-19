@@ -1,254 +1,181 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+
 import { FontAwesome5 } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 // React native imports
 import { Link } from 'expo-router';
-import { Pressable, View, Text, StyleSheet, ScrollView, TextInput, Modal } from 'react-native';
+import { Pressable, View, Text, StyleSheet, ScrollView, TextInput, Modal, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import Svg, { Path } from 'react-native-svg';
+import MapView, { Callout, MapOverlay } from 'react-native-maps';
+import { useEffect } from 'react';
+import { ActivityIndicator } from 'react-native';
+import axios from 'axios';
+import { Marker,Geojson } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
 
 
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c; // Distance in km
+  return distance;
+}
 
 
 export default function Taxi({ navigation }) {
-    return (
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
-            <LinearGradient colors={["#F838D5", "#38C7F8"]} style={styles.container}>
-            <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-               <Ionicons name="arrow-back" size={28} color="white" />
-            </Pressable>
-                <Header />
-                <SearchBar />
-                <BusStops />
-            </LinearGradient>
-        </ScrollView>
-    );
-}
+    const [location, setlocation]=useState(null);
+    useEffect(()=>{
+      (async()=>{
+        let {status}= await Location.requestForegroundPermissionsAsync();
+        if (status!='granted'){
+          console.log("Permission Denied");
+          return;  
+        }
+        let location=await Location.getCurrentPositionAsync();
+        setlocation({
+          latitude:location.coords.latitude,
+          longitude:location.coords.longitude
+        });
+      })();
+    },[]);
 
-const Header = () => {
-    return (
-        <View style={styles.header}>
-            <Text style={styles.headerText}>Taxis</Text>
+
+    const [taxilocation, Settaxilocation]=useState([]);
+    const [TaxiStop, SetTaxiStop]= useState([]);
+
+    useEffect(() => {
+      const fetchTaxiData = async () => {
+        try {
+          let config = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: 'http://datamall2.mytransport.sg/ltaodataservice/Taxi-Availability',
+            headers: {
+              'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+              'accept': 'application/json'
+            }
+          };
+          const response = await axios.request(config);
+          Settaxilocation(response.data.value);
+        } catch (error) {
+          console.log('Taxi Availability not fetching' );
+        }
+      };
+
+      const fetchTaxiStands = async () => {
+        try {
+          let config = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: 'http://datamall2.mytransport.sg/ltaodataservice/TaxiStands',
+            headers: {
+              'AccountKey': 'wQRr38EdTU+b5QZjVHu+Rw==',
+              'accept': 'application/json'
+            }
+          };
+          const response = await axios.request(config);
+          SetTaxiStop(response.data.value);
+        } catch (error) {
+          console.log('Taxi Stand not fetching');
+        }
+      };
+  
+      fetchTaxiStands();
+      fetchTaxiData();
+    }, []);
+
+    if (!location) {
+      return (
+        <View style={styles.container}>
+          <ActivityIndicator size="large" color="#0000ff" />
         </View>
-    );
-};
-
-const BusStops = () => {
-    // State to manage which bus stops are open
-    const [selectedBusStops, setSelectedBusStops] = useState([]);
+      );
+    }
+    return (
+    <View style={{flex:1}}>
+        <MapView style={styles.map} initialRegion={{
+           latitude: location.latitude,
+           longitude: location.longitude,
+          latitudeDelta: 0.1,
+          longitudeDelta: 0.1,}} 
+          showsUserLocation={true}
+          followsUserLocation={true}
+          >
  
-    const busStops = [
-        {
-            name: "Bukit Panjang Interchange",
-            shortName: "BP INT",
-            distance: 190,
-            buses: [
-                { busno: 960, timings: [3, 7, 13] },
-                { busno: 972, timings: [5, 10, 15] },
-            ]
-        },
-        {
-            name: "Clementi Interchange",
-            shortName: "Clementi INT",
-            distance: 200,
-            buses: [
-                { busno: 96, timings: [5, 8, 15] },
-                { busno: 184, timings: [6, 12, 18] },
-            ]
-        },
-        {
-            name: "Opposite NUH",
-            shortName: "Opp NUH",
-            distance: 300,
-            buses: [
-                { busno: 95, timings: [2, 11, 20] },
-                { busno: 151, timings: [7, 14, 21] },
-            ]
-        },
-    ];
+        {taxilocation.length > 0 && location && taxilocation
+          .filter(taxi => getDistanceFromLatLonInKm(location.latitude, location.longitude, taxi.Latitude, taxi.Longitude) <= 2)
+          .map((taxi, index) => (
+            <Marker
+              key={index}
+              coordinate={{
+                latitude: taxi.Latitude,
+                longitude: taxi.Longitude
+              }}
+              title="Taxi"
+              pinColor="red"
+            >
+              <FontAwesome name="taxi" size={10} color="black" />
+            </Marker>
+          ))}
 
-    // Handle opening multiple dropdowns
-    const handleSelectBusStop = (index) => {
-        setSelectedBusStops(prevSelectedBusStops =>
-            prevSelectedBusStops.includes(index)
-                ? prevSelectedBusStops.filter(stop => stop !== index)
-                : [...prevSelectedBusStops, index]
-        );
-    };
+        {TaxiStop.map((stand, index) => (
+          <Marker
+            key={index}
+            coordinate={{
+              latitude: stand.Latitude,
+              longitude: stand.Longitude
+            }}
+            title={stand.Name}
+            description={`Ownership: ${stand.Ownership} Type: ${stand.Type}`}
+          >
+            <MaterialCommunityIcons name="bus-stop-covered" size={15} color="black" />
+          </Marker>
+        ))}
 
-    return (
-        <View>
-            {busStops.map((busStop, index) => (
-                <View key={index}>
-                    <BusStop
-                        name={busStop.name}
-                        shortName={busStop.shortName}
-                        distance={busStop.distance}
-                        buses={busStop.buses}
-                        isOpen={selectedBusStops.includes(index)}
-                        onSelectBusStop={() => handleSelectBusStop(index)}
-                    />
-                </View>
-            ))}
-        </View>
+
+          {location && (
+          <Marker
+            coordinate={location}
+            title="You are here"
+            pinColor="blue" // You can customize the color or use a custom image
+          />
+
+        )}  
+        </MapView>
+    </View>
     );
-};
+  };
+   
 
-const BusStop = ({ name, shortName, distance, buses, isOpen, onSelectBusStop }) => {
-    const [isFavourited, setIsFavourited] = useState(false);
 
-    // Toggle favourite state
-    const toggleFavourite = () => {
-        setIsFavourited(!isFavourited);
-    };
 
-    return (
-        <View style={styles.busStopWrapper}>
-            <View style={styles.busStopContainer}>
-                <Pressable style={styles.iconButton} onPress={toggleFavourite}>
-                    <HeartIcon filled={isFavourited} />
-                </Pressable>
-                <Pressable style={styles.busStopDetails} onPress={onSelectBusStop}>
-                    <View style={styles.busStopRow}>
-                        <Text style={styles.busStopName}>{name}</Text>
-                        <Text style={styles.busStopDistance}>{distance}m</Text>
-                    </View>
-                    <Text style={styles.busStopShortName}>{shortName}</Text>
-                </Pressable>
-                <Pressable style={styles.iconButton}>
-                    <FontAwesome5 name="sync-alt" size={24} color="black" />
-                </Pressable>
-            </View>
-            {isOpen && (
-                <View style={styles.dropdownContent}>
-                    {buses && buses.map((bus, busIndex) => (
-                        <View key={busIndex} style={styles.busTimingContainer}>
-                            <Text style={styles.busNumber}>Bus {bus.busno}</Text>
-                            <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-                                {bus.timings.map((timing, index) => (
-                                    <Text key={index} style={styles.timingText}>{timing} min</Text>
-                                ))}
-                            </ScrollView>
-                        </View>
-                    ))}
-                </View>
-            )}
-        </View>
-    );
-};
 
-const HeartIcon = ({ filled }) => {
-    return (
-        <Svg
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill={filled ? "red" : "none"}
-            stroke="red"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 
-            4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 
-            19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-        </Svg>
-    );
-};
-
-const SearchBar = ({ value = '', onChangeText = () => {} }) => {
-    return (
-        <TextInput
-            style={styles.searchBar}
-            value={value}
-            onChangeText={onChangeText}
-            placeholder="Search bus stops..."
-        />
-    );
-};
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 16,
+const styles=StyleSheet.create({
+    container:{
+        flex:1
     },
-    header: {
-        backgroundColor: '#F838D5',
-        padding: 5,
-        marginBottom: 8,
-        marginLeft: 5,
+    map:{
+        flex:1,
+        width:'100%',
+        height:'100%'
     },
-    headerText: {
-        color: 'white',
-        fontSize: 24,
-        fontWeight: 'bold',
+    callout: {
+      width: 150,
+      padding: 5,
     },
-    busStopWrapper: {
-        marginBottom: 16,
-    },
-    busStopContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFE4E1',
-        padding: 8,
-        borderRadius: 10,
-    },
-    busStopDetails: {
-        flex: 1,
-        marginLeft: 8,
-    },
-    busStopRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    busStopName: {
-        fontSize: 18,
-    },
-    busStopDistance: {
-        fontSize: 16,
-    },
-    busStopShortName: {
-        fontSize: 16,
-        color: '#707070',
-    },
-    iconButton: {
-        padding: 8,
-    },
-    searchBar: {
-        backgroundColor: 'white',
-        padding: 10,
-        marginBottom: 12,
-        borderRadius: 30,
-        fontSize: 16,
-    },
-    dropdownContent: {
-        backgroundColor: 'white',
-        padding: 10,
-        marginTop: 5,
-        borderRadius: 10,
-    },
-    busTimingContainer: {
-        marginBottom: 8,
-    },
-    busNumber: {
-        marginLeft: 15,
-        fontSize: 20,
-    },
-    timingText: {
-        marginLeft: 26, // Padding to shift text to the right
-        fontSize: 18,
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        width: 100, // Adjust width as needed for uniform spacing
-    },
-    backButton: {
-        top: 10,
-        left: 10,
-        zIndex: 10,
-        marginBottom: 10,
-    },
+    calloutTitle: {
+      fontWeight: 'bold',
+      marginBottom: 5,
+    }
 });
