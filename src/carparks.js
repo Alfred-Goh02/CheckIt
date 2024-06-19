@@ -36,13 +36,30 @@ export default function CarPark() {
   // Fetch data from the API
   const fetchData = async () => {
     try {
-      const [response, favs, dropdowns] = await Promise.all([
-        axios.get('http://datamall2.mytransport.sg/ltaodataservice/CarParkAvailabilityv2', {
+      let allCarParks = [];
+      let skipValue = 0;
+      const batchSize = 500;
+      let toContinue = true;
+
+      while (toContinue) {
+        const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/CarParkAvailabilityv2?$skip=${skipValue}`, {
           headers: {
             'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
             'Accept': 'application/json',
           },
-        }),
+        }); 
+
+        const carparkData = response.data.value;
+
+        if (carparkData.length > 0) {
+          allCarParks = allCarParks.concat(carparkData);
+          skipValue += batchSize;
+        } else {
+          toContinue = false;
+        }
+      }
+
+      const [favs, dropdowns] = await Promise.all([
         AsyncStorage.getItem('favourites'),
         AsyncStorage.getItem('dropdowns'),
       ]);
@@ -50,20 +67,18 @@ export default function CarPark() {
       const favouriteCarParks = favs ? JSON.parse(favs) : {};
       const dropdownStates = dropdowns ? JSON.parse(dropdowns) : {};
 
-      if (response.data && response.data.value) {
-        const carparkData = response.data.value.map(carpark => ({
-          carparkName: carpark.Development, // Use development as carpark name
-          area: carpark.Area,
-          location: carpark.Location, // longitude
-          spacesAvailable: carpark.AvailableLots,
-          lotType: carpark.LotType,
-          agency: carpark.Agency, // LTA or HDB etc
-          isFavourite: !!favouriteCarParks[carpark.Development], // Check if it's a favourite
-          isOpen: !!dropdownStates[carpark.Development], // Check if dropdown is open
-        }));
+      const formattedCarParks = allCarParks.map(carpark => ({
+        carparkName: carpark.Development, // Use development as carpark name
+        area: carpark.Area,
+        location: carpark.Location, // longitude
+        spacesAvailable: carpark.AvailableLots,
+        lotType: carpark.LotType,
+        agency: carpark.Agency, // LTA or HDB etc
+        isFavourite: !!favouriteCarParks[carpark.Development], // Check if it's a favourite
+        isOpen: !!dropdownStates[carpark.Development], // Check if dropdown is open
+      }));
 
-        setCarParks(carparkData);
-      }
+      setCarParks(formattedCarParks);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -328,12 +343,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(128, 128, 128, 0.1)',
     borderRadius: 5,
     paddingVertical: 1,
-    paddingHorizontal: 5,
+    paddingHorizontal: 2,
     width: 'fit-content',
     alignSelf: 'flex-start',
   },
   searchBar: {
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFF0',
     padding: 10,
     marginBottom: 12,
     borderRadius: 30,
@@ -364,7 +379,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   dropdownContent: {
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFF0',
     padding: 10,
     marginTop: 5,
     borderRadius: 10,
