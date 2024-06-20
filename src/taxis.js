@@ -1,15 +1,7 @@
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { FontAwesome5 } from '@expo/vector-icons';
-import { Ionicons } from '@expo/vector-icons';
-import { Entypo } from '@expo/vector-icons';
-import { AntDesign } from '@expo/vector-icons';
 // React native imports
-import { Link } from 'expo-router';
 import { Pressable, View, Text, StyleSheet, ScrollView, TextInput, Modal, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
-import Svg, { Path } from 'react-native-svg';
 import MapView, { Callout, MapOverlay } from 'react-native-maps';
 import { useEffect } from 'react';
 import { ActivityIndicator } from 'react-native';
@@ -18,7 +10,6 @@ import { Marker,Geojson } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
-
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   const R = 6371; // Radius of the earth in km

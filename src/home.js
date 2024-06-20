@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 import { Link, useFocusEffect } from 'expo-router';
-import { Pressable, View, Text, StyleSheet, Image, StatusBar } from 'react-native';
+import { Pressable, View, Text, StyleSheet, Image, StatusBar, SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 //import { Button } from 'react-native-elements';
 import { useAuth } from './Authprovider';
@@ -42,28 +42,32 @@ const Welcomeuser = ({ navigation }) => {
 
 
   return (
-    <View style={styles.welcomeContainer}>
+    <SafeAreaView style={styles.welcomeContainer}>
+
       <Text style={styles.welcomeText}>
         Welcome back!
       </Text>
       <Text style={styles.userText}>
         User
       </Text>
+      <SafeAreaView style={{color:"black", justifyContent:'flex-end', flexDirection:'row', flex:1}}>
       <Pressable onPress={handleSignOut}>
-        <Entypo name="log-out" size={30} color="black" style={{ marginLeft: 100, marginTop: 2 }} />
+        <Entypo name="log-out" size={30} color="black" style={{marginTop: 2 }} />
       </Pressable>
-    </View>
+      </SafeAreaView>
+    </SafeAreaView>
   );
 }
 
 const Icons = ({ navigation }) => {
+  const [pressed, setPressed]=useState(false);
   return (
     <View style={styles.IconsContainer}>
-      <View style={styles.iconCar}>
-        <Pressable onPress={() => navigation.navigate("Carpark")}>
-          <FontAwesome name="car" size={40} color="white" style={{ marginLeft: 10 }} />
-          <Text style={styles.parkingText} numberOfLines={1} > Parking </Text>
-          <Text style={styles.parkingText} numberOfLines={1} >Availability</Text>
+      <View style={[styles.iconCar, pressed && styles.iconPressed]}>
+        <Pressable onPressIn={()=>setPressed(true)} 
+        onPressOut={() => {setPressed(false);navigation.navigate("Carpark");} }>
+          <FontAwesome name="car" size={40} color="white" />
+          <Text style={styles.parkingText}  > Parking </Text>
         </Pressable>
       </View>
       <View style={styles.iconWrapper}>
@@ -131,10 +135,12 @@ const TabLayout = ({ navigation }) => {
   
   return (
     <LinearGradient colors={["#F838D5", "#38C7F8"]} style={styles.mainContainer}>
+      <SafeAreaView style={{flex:1}}>
       <StatusBar backgroundColor="#F838D5" barStyle="light-content" />
       <Welcomeuser navigation={navigation} />
       <Icons navigation={navigation} />
       <BtmIcons />
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -183,34 +189,38 @@ const styles = StyleSheet.create({
   },
   IconsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    //justifyContent: 'center',
     marginTop: 200,
-    paddingTop: 30,
-    paddingBottom: 20,
+    //paddingTop: 30,
+    //paddingBottom: 20,
     backgroundColor: "rgba(80, 82 , 108, 0.3)",
     borderRadius: 20,
+    flex: 0.3
   },
   iconWrapper: {
-    marginRight: 30,
-    flexDirection: 'column',
+    //marginRight: 30,
+    flex:0.333,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent:'center'
   },
   iconCar: {
-    flex: 0.38,
+    flex: 0.333,
     flexDirection: 'column',
     alignItems: 'center',
+    justifyContent:'center',
   },
   iconText: {
-    fontSize: 20,
+    fontSize: 15,
     textAlign: 'center',
     color: "white",
-    marginRight:10,
+    //marginRight:10,
   },
   parkingText:{
     fontSize: 15,
     textAlign: 'center',
     color: "white",
-    marginRight:10,
+    //marginRight:10,
   },
   BtmIconsContainer: {
     position: "absolute",
@@ -237,6 +247,13 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "white",
     marginHorizontal: 10,
+  },
+  iconPressed:{
+    flex: 0.333,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent:'center',
+    backgroundColor:'rgba(60, 62, 88, 0.3)'
   }
 });
 
