@@ -22,11 +22,13 @@ const LoginScreen = ({ navigation }) => {
       Alert.alert('Error', 'Please enter both email and password.');
       return;
     }
-    
+
     setLoading(true);
     try {
-      await signIn(email, password);
-      navigation.navigate('Home');
+      const success = await signIn(email, password);
+      if (success) {
+        navigation.navigate('Home');
+      }
     } catch (error) {
       Alert.alert('Error', error.message);
     } finally {
