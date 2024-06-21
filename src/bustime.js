@@ -344,7 +344,7 @@ const ServiceDetails = ({ service }) => {
 
     // Function to determine text color based on load
     const getTextColor = (load) => {
-        console.log('Load value:', load); 
+      //  console.log('Load value:', load); 
         switch (load) {
             case 'SEA':
                 return '#32CD32'; 
@@ -382,18 +382,22 @@ const ServiceDetails = ({ service }) => {
             {service.nextBuses.map((bus, index) => (
                 <View key={index} style={styles.busDetails}>
                     {bus.estimatedArrival ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={[styles.arrivalTime, { color: getTextColor(bus.load) }]}>
-                                {getArrivalTimeInMins(bus.estimatedArrival)}
-                            </Text>
-                            {hasWAB(bus.feature) && (
-                                <FontAwesome5 name="wheelchair" size={16} color="black" style={{ marginLeft: 5 }} />
-                            )}
-                            {bus.type && (
-                                <Text style={styles.vehicleType}>
-                                    {getVehType(bus.type)}
+                        <View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={[styles.arrivalTime, { color: getTextColor(bus.load) }]}>
+                                    {getArrivalTimeInMins(bus.estimatedArrival)}
                                 </Text>
-                            )}
+                                {hasWAB(bus.feature) && (
+                                    <FontAwesome5 name="wheelchair" size={16} color="black" style={{ marginLeft: 3 }} />
+                                )}
+                            </View>
+                            <View style={styles.vehicleType}>
+                                {bus.type && (
+                                    <Text style={styles.vehicleType}>
+                                        {getVehType(bus.type)}
+                                    </Text>
+                                )}
+                            </View>
                         </View>
                     ) : (
                         <Text style={styles.arrivalTime}>-</Text>
@@ -524,8 +528,8 @@ const styles = StyleSheet.create({
     serviceDetails: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 5,
-        marginBottom: 5,
+        marginTop: 3,
+        marginBottom: 3,
     },
     serviceName: {
         fontWeight: 'bold',
@@ -544,8 +548,9 @@ const styles = StyleSheet.create({
     },
     vehicleType: {
         fontSize: 10,
-        color: '#606060',
-        marginTop: 5,
+        color: '#505050',
         flexDirection: 'column',
+        alignItems: 'center',
+        fontWeight: 'bold',
     },
 });
