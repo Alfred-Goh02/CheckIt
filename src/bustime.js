@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
         marginLeft: 5,
     },
     headerText: {
-        color: 'white',
+        color: '#FFFFF0',
         fontSize: 24,
         fontWeight: 'bold',
     },

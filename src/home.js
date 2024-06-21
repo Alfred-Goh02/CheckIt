@@ -50,7 +50,7 @@ const Welcomeuser = ({ navigation }) => {
       <Text style={styles.userText}>
         User
       </Text>
-      <SafeAreaView style={{color:"black", justifyContent:'flex-end', flexDirection:'row', flex:1}}>
+      <SafeAreaView style={{color:"black", justifyContent:'flex-end', flexDirection:'row', flex:1, marginRight: 15}}>
       <Pressable onPress={handleSignOut}>
         <Entypo name="log-out" size={30} color="black" style={{marginTop: 2 }} />
       </Pressable>
@@ -66,13 +66,13 @@ const Icons = ({ navigation }) => {
       <View style={[styles.iconCar, pressed && styles.iconPressed]}>
         <Pressable onPressIn={()=>setPressed(true)} 
         onPressOut={() => {setPressed(false);navigation.navigate("Carpark");} }>
-          <FontAwesome name="car" size={40} color="white" />
+          <FontAwesome name="car" size={50} color="white" />
           <Text style={styles.parkingText}  > Parking </Text>
         </Pressable>
       </View>
       <View style={styles.iconWrapper}>
         <Pressable onPress={() => navigation.navigate("BusTime")}>
-          <FontAwesome5 name="bus" size={40} color="white" />
+          <FontAwesome5 name="bus" size={50} color="white" />
           <Text style={styles.iconText}>
             Bus
           </Text>
@@ -80,7 +80,7 @@ const Icons = ({ navigation }) => {
       </View>
       <View style={styles.iconWrapper}>
         <Pressable onPress={() => navigation.navigate("Taxi")}>
-          <FontAwesome5 name="taxi" size={40} color="white" />
+          <FontAwesome5 name="taxi" size={50} color="white" />
           <Text style={styles.iconText}>
             Taxi
           </Text>
@@ -176,6 +176,7 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 25,
     marginRight: 5,
+    marginLeft: 5,
     fontFamily: "Roboto",
     fontWeight: "bold",
     color: 'white',
@@ -190,8 +191,8 @@ const styles = StyleSheet.create({
   IconsContainer: {
     flexDirection: 'row',
     //justifyContent: 'center',
-    marginTop: 200,
-    //paddingTop: 30,
+    marginTop: 250,
+    //paddingTop: 10,
     //paddingBottom: 20,
     backgroundColor: "rgba(80, 82 , 108, 0.3)",
     borderRadius: 20,

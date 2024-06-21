@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   forgotpwContainer: {
     flexDirection: "row",
     alignSelf: 'flex-end',
-    marginRight: 15,
+    marginRight: 40,
   },
   forgotpwText: {
     opacity: 0.6,

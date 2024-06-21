@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { Text, TextInput, View, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from '@firebase/auth';
+import { Ionicons } from '@expo/vector-icons';
+import { getAuth, createUserWithEmailAndPassword } from '@firebase/auth';
 
 const Signup = () => {
+
+    const navigation = useNavigation();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -11,7 +16,7 @@ const Signup = () => {
     async function signUpWithEmail() {
         setLoading(true);
         try {
-            const auth = getAuth();
+            const auth = getAuth(); // Get auth instance from Firebase
             await createUserWithEmailAndPassword(auth, email, password);
             Alert.alert('Success', 'Sign up successful!');
         } catch (error) {
@@ -21,9 +26,19 @@ const Signup = () => {
         }
     }
 
+    const handleBackPress = () => {
+        navigation.goBack();
+    };
+
     return (
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
             <LinearGradient colors={["#F838D5", "#38C7F8"]} style={styles.mainContainer}>
+                <View style={styles.headerContainer}>
+                    <Pressable style={styles.backButton} onPress={handleBackPress}>
+                        <Ionicons name="arrow-back" size={28} color="#FFFFF0" />
+                    </Pressable>
+                    <Text style={styles.headerText}>Sign Up</Text>
+                </View>
                 <View style={styles.signupContainer}>
                     <View style={styles.textfieldContainer}>
                         <Text style={styles.label}>
@@ -68,15 +83,30 @@ const GradientButton = ({ loading }) => {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
+    },
+    headerContainer: {
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        paddingLeft: 10,
+        marginTop: 20, 
+        marginLeft: 8,
+    },
+    backButton: {
+        marginRight: 10, 
+    },
+    headerText: {
+        color: '#FFFFF0',
+        fontSize: 24,
+        fontWeight: 'bold',
     },
     signupContainer: {
-        backgroundColor: "white",
+        backgroundColor: "#FFFFF0",
         borderRadius: 20,
         width: 300,
         paddingVertical: 20,
         paddingHorizontal: 15,
+        alignSelf: 'center', 
+        marginTop: 200,
     },
     textfieldContainer: {
         marginBottom: 20,
@@ -99,7 +129,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     buttonText: {
-        color: 'white',
+        color: '#FFFFF0',
         fontSize: 16,
         fontWeight: "bold"
     },

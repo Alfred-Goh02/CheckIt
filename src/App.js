@@ -31,7 +31,7 @@ function AuthNavigator() {
       <Stacks.Screen
         name="Signup"
         component={Signup}
-        options={{ headerStyle: { backgroundColor: "#F838D5" } }}
+        options={{ headerShown: false }}
       />
       <Stacks.Screen
         name="BusTime"
