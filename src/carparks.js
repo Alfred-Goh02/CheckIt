@@ -10,8 +10,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /* Left with using firebase and settle the close dropdowns permanently when search or click back to homepage 
  *find if there are data avail for heavy veh & motorcycles separately
- *Also to set favourites as the first few to pop out ? 
- *Create env to hide API account key ? */ 
+ *Also to set favourites as the first few to pop out 
+ *Duplicate weird searches (search RHM3) */ 
 
 export default function CarPark() {
 
@@ -33,7 +33,7 @@ export default function CarPark() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch data from the API
+  // Fetch data from carpark API
   const fetchData = async () => {
     try {
       let allCarParks = [];
@@ -70,6 +70,7 @@ export default function CarPark() {
       const formattedCarParks = allCarParks.map(carpark => ({
         carparkName: carpark.Development, // Use development as carpark name
         area: carpark.Area,
+        carparkID: carpark.CarParkID, // carpark code
         location: carpark.Location, // longitude
         spacesAvailable: carpark.AvailableLots,
         lotType: carpark.LotType,
@@ -159,7 +160,8 @@ export default function CarPark() {
 
   // Filter car parks based on the search query
   const filteredCarParks = carParks.filter(carPark =>
-    carPark.carparkName.toLowerCase().includes(searchQuery.toLowerCase())
+    carPark.carparkName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    carPark.carparkID.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Paginate the filtered car parks

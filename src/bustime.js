@@ -228,7 +228,8 @@ export default function BusStop() {
 
     // Filter bus stops based on the search query
     const filteredBusStops = busStops.filter(busStop =>
-        busStop.name.toLowerCase().includes(searchQuery.toLowerCase())
+        busStop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        busStop.codeName.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     // Paginate the filtered bus stops
@@ -331,15 +332,11 @@ const BusStopList = ({ busStops, toggleFavourite, toggleDropdown }) => {
 const ServiceDetails = ({ service }) => {
     // Function to calculate minutes remaining for bus arrival
     const getArrivalTimeInMins = (estimatedArrival) => {
-        if (estimatedArrival !== "") {
-            const arrivalTime = new Date(estimatedArrival);
-            const currentTime = new Date();
-            const diffInMs = arrivalTime - currentTime;
-            const diffInMins = Math.floor(diffInMs / 60000); // round to int (eg. 3.49 = 3)
-            return diffInMins > 0 ? diffInMins : 'Arr';
-        } else {
-            return ''; // Display blank if no arrival
-        }
+        const arrivalTime = new Date(estimatedArrival);
+        const currentTime = new Date();
+        const diffInMs = arrivalTime - currentTime;
+        const diffInMins = Math.floor(diffInMs / 60000); // round to int (eg. 3.49 = 3)
+        return diffInMins > 0 ? diffInMins : 'Arr';
     };
 
     // Function to determine text color based on load
