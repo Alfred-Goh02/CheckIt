@@ -2,14 +2,14 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthProvider, useAuth } from './Authprovider';
+import { AuthProvider, useAuth } from './src/Authprovider';
 import React from 'react';
-import TabLayout from './home';
-import LoginScreen from './login';
-import Signup from './signup';
-import BusTime from './bustime';
-import Carpark from './carparks';
-import Taxi from './taxis';
+import TabLayout from './src/home';
+import LoginScreen from './src/login';
+import Signup from './src/signup';
+import BusTime from './src/bustime';
+import Carpark from './src/carparks';
+import Taxi from './src/taxis';
 
 const Stacks = createNativeStackNavigator();
 
