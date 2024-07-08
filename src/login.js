@@ -38,8 +38,8 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
-      <LinearGradient colors={["#F838D5", "#38C7F8"]} style={styles.mainContainer}>
-        <StatusBar backgroundColor="#F838D5" barStyle="light-content" />
+      <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.mainContainer}>
+        <StatusBar backgroundColor='gray' barStyle="light-content" />
         <View style={styles.welcomeContainer}>
           <Image style={styles.welcomeImage} source={require('../assets/CIcon.png')} />
         </View>
@@ -89,7 +89,7 @@ const LoginScreen = ({ navigation }) => {
 };
 
 const GradientButton = ({ loading }) => (
-  <LinearGradient colors={["#F838D5", "#38C7F8"]} style={gradientButtonStyles.button}>
+  <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={gradientButtonStyles.button}>
     <Text style={gradientButtonStyles.buttonText}>{loading ? 'Logging in ...' : 'Log in'}</Text>
   </LinearGradient>
 );
@@ -135,12 +135,14 @@ const styles = StyleSheet.create({
   inputLabel: {
     marginLeft: 15,
     fontWeight: "bold",
+    fontSize: 16,
   },
   input: {
     height: 40,
     width: 270,
     margin: 12,
     borderBottomWidth: 1,
+    fontSize: 16,
   },
   forgotpwContainer: {
     flexDirection: "row",
@@ -149,7 +151,7 @@ const styles = StyleSheet.create({
   },
   forgotpwText: {
     opacity: 0.6,
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: "bold",
   },
   LoginButtonContainer: {
@@ -162,12 +164,14 @@ const styles = StyleSheet.create({
   },
   signUpText: {
     opacity: 0.5,
+    fontSize: 16,
   },
   signUpLink: {
     marginLeft: 5,
     opacity: 0.5,
     fontWeight: "bold",
     textDecorationLine: 'underline',
+    fontSize: 16,
   }
 });
 

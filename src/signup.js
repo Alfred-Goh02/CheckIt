@@ -32,7 +32,7 @@ const Signup = () => {
 
     return (
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-            <LinearGradient colors={["#F838D5", "#38C7F8"]} style={styles.mainContainer}>
+            <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.mainContainer}>
                 <View style={styles.headerContainer}>
                     <Pressable style={styles.backButton} onPress={handleBackPress}>
                         <Ionicons name="arrow-back" size={28} color="#FFFFF0" />
@@ -74,7 +74,7 @@ const Signup = () => {
 
 const GradientButton = ({ loading }) => {
     return (
-        <LinearGradient colors={["#F838D5", "#38C7F8"]} style={styles.button}>
+        <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.button}>
             <Text style={styles.buttonText}>{loading ? 'Signing up...' : 'Sign up'}</Text>
         </LinearGradient>
     );
@@ -114,6 +114,7 @@ const styles = StyleSheet.create({
     label: {
         fontWeight: "bold",
         marginBottom: 5,
+        fontSize: 16,
     },
     input: {
         height: 40,

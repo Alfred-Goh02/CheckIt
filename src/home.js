@@ -52,7 +52,7 @@ const Welcomeuser = ({ navigation }) => {
       </Text>
       <SafeAreaView style={{color:"black", justifyContent:'flex-end', flexDirection:'row', flex:1, marginRight: 15}}>
       <Pressable onPress={handleSignOut}>
-        <Entypo name="log-out" size={30} color="black" style={{marginTop: 2 }} />
+        <Entypo name="log-out" size={30} color="black" style={{marginTop: 30 }} />
       </Pressable>
       </SafeAreaView>
     </SafeAreaView>
@@ -134,9 +134,9 @@ const TabLayout = ({ navigation }) => {
 
   
   return (
-    <LinearGradient colors={["#F838D5", "#38C7F8"]} style={styles.mainContainer}>
+    <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.mainContainer}>
       <SafeAreaView style={{flex:1}}>
-      <StatusBar backgroundColor="#F838D5" barStyle="light-content" />
+      <StatusBar backgroundColor='gray' barStyle="light-content" />
       <Welcomeuser navigation={navigation} />
       <Icons navigation={navigation} />
       <BtmIcons />
@@ -170,23 +170,29 @@ const styles = StyleSheet.create({
   welcomeContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginLeft: 10,
-    marginTop: 20,
+ //   marginLeft: 10,
+  //  marginTop: 20,
+    backgroundColor: '#CFE2F3',
+    height: 100,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
   },
   welcomeText: {
     fontSize: 25,
     marginRight: 5,
-    marginLeft: 5,
-    fontFamily: "Roboto",
+    marginLeft: 12,
+    fontFamily: 'Roboto',
     fontWeight: "bold",
-    color: 'white',
+    color: 'black',
+    marginTop: 30,
   },
   userText: {
     fontSize: 25,
     color: '#444EC1',
-    fontFamily: "Roboto",
+    fontFamily: 'Roboto',
     fontWeight: "bold",
     marginLeft: 3,
+    marginTop: 30,
   },
   IconsContainer: {
     flexDirection: 'row',

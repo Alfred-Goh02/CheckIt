@@ -189,7 +189,7 @@ export default function CarPark() {
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
-      <LinearGradient colors={["#F838D5", "#38C7F8"]} style={styles.container}>
+      <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.container}>
         <Pressable style={styles.backButton} onPress={handleBackPress}>
           <Ionicons name="arrow-back" size={28} color="white" />
         </Pressable>
@@ -301,15 +301,16 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    backgroundColor: '#F838D5',
-    padding: 5,
+    backgroundColor: '#4682B4',
+    padding: 10,
     marginBottom: 8,
-    marginLeft: 5,
+    borderRadius: 10,
   },
   headerText: {
     color: 'white',
     fontSize: 24,
     fontWeight: 'bold',
+    marginLeft: 5,
   },
   carParkWrapper: {
     marginBottom: 16,
@@ -317,7 +318,7 @@ const styles = StyleSheet.create({
   carParkContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFE4E1',
+    backgroundColor: '#FFFFF0',
     padding: 8,
     borderRadius: 10,
   },
