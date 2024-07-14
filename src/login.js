@@ -46,7 +46,7 @@ const LoginScreen = ({ navigation }) => {
         <View style={styles.loginContainer}>
           <Text style={styles.loginTitle}>Login</Text>
           <View style={styles.textfieldContainer}>
-            <Text style={styles.inputLabel}>Username</Text>
+            <Text style={styles.inputLabel}>Email</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}

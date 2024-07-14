@@ -11,7 +11,7 @@ import * as Location from 'expo-location';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
 
-function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+export function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   const R = 6371; // Radius of the Earth in km
   const toRad = Math.PI / 180;
   lat1 *= toRad;
