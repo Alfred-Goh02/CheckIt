@@ -1,36 +1,24 @@
-import React, { useState } from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { Ionicons } from '@expo/vector-icons';
-import { Entypo } from '@expo/vector-icons';
-import { AntDesign } from '@expo/vector-icons';
-import { Link, useFocusEffect } from 'expo-router';
-import { Pressable, View, Text, StyleSheet, Image, StatusBar, SafeAreaView } from 'react-native';
+import React, { useEffect } from 'react';
+import { FontAwesome, FontAwesome5, Ionicons, Entypo, AntDesign } from '@expo/vector-icons';
+import { Link } from 'expo-router';
+import { Pressable, View, Text, StyleSheet, Image, StatusBar, SafeAreaView, BackHandler } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-//import { Button } from 'react-native-elements';
 import { useAuth } from './Authprovider';
-import { useEffect } from 'react';
-import { BackHandler } from 'react-native';
-const Logomodal = () => {
-  return (
-    <View style={styles.container}>
-      <Image style={styles.tinyLogo} source={require('../assets/CIcon.png')} />
-      <View style={styles.modal}>
-        <Link href="/modal" asChild>
-          <Pressable>
-            {({ pressed }) => (
-              <FontAwesome
-                name="info-circle"
-                size={40}
-                style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-              />
-            )}
-          </Pressable>
-        </Link>
-      </View>
+
+const Logomodal = () => (
+  <View style={styles.container}>
+    <Image style={styles.tinyLogo} source={require('../assets/CIcon.png')} />
+    <View style={styles.modal}>
+      <Link href="/modal" asChild>
+        <Pressable>
+          {({ pressed }) => (
+            <FontAwesome name="info-circle" size={40} style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }} />
+          )}
+        </Pressable>
+      </Link>
     </View>
-  );
-}
+  </View>
+);
 
 const Welcomeuser = ({ navigation }) => {
   const { signOut } = useAuth();
@@ -40,228 +28,166 @@ const Welcomeuser = ({ navigation }) => {
     navigation.replace('Login');
   };
 
-
   return (
     <SafeAreaView style={styles.welcomeContainer}>
-
-      <Text style={styles.welcomeText}>
-        Welcome back!
-      </Text>
-      <Text style={styles.userText}>
-        User
-      </Text>
-      <SafeAreaView style={{color:"black", justifyContent:'flex-end', flexDirection:'row', flex:1, marginRight: 15}}>
-      <Pressable onPress={handleSignOut}>
-        <Entypo name="log-out" size={30} color="black" style={{marginTop: 30 }} />
-      </Pressable>
-      </SafeAreaView>
+      <Text style={styles.welcomeText}>Welcome back!</Text>
+      <Text style={styles.userText}>User</Text>
+      <View style={styles.logoutContainer}>
+        <Pressable onPress={handleSignOut}>
+          <Entypo name="log-out" size={30} color="black" />
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
-}
+};
 
-const Icons = ({ navigation }) => {
-  const [pressed, setPressed]=useState(false);
-  return (
-    <View style={styles.IconsContainer}>
-      <View style={[styles.iconCar, pressed && styles.iconPressed]}>
-        <Pressable onPressIn={()=>setPressed(true)} 
-        onPressOut={() => {setPressed(false);navigation.navigate("Carpark");} }>
-          <FontAwesome name="car" size={50} color="white" />
-          <Text style={styles.parkingText}  > Parking </Text>
-        </Pressable>
-      </View>
-      <View style={styles.iconWrapper}>
-        <Pressable onPress={() => navigation.navigate("BusTime")}>
-          <FontAwesome5 name="bus" size={50} color="white" />
-          <Text style={styles.iconText}>
-            Bus
-          </Text>
-        </Pressable>
-      </View>
-      <View style={styles.iconWrapper}>
-        <Pressable onPress={() => navigation.navigate("Taxi")}>
-          <FontAwesome5 name="taxi" size={50} color="white" />
-          <Text style={styles.iconText}>
-            Taxi
-          </Text>
-        </Pressable>
-      </View>
-      </View>
-  );
-}
-
-const BtmIcons = () => {
-  return (
-    <View style={styles.BtmIconsContainer}>
-      <View style={styles.BtmIconsWrapper}>
-        <Ionicons name="settings-sharp" size={50} color="white" />
-        <Text style={{ color: "white" }}>
-          Settings
-        </Text>
-      </View>
-      <View style={styles.Divider} />
-      <View style={styles.BtmIconsWrapper}>
-        <Entypo name="home" size={50} color="white" />
-        <Text style={{ color: "white" }}>
-          Home
-        </Text>
-      </View>
-      <View style={styles.Divider} />
-      <View style={styles.BtmIconsWrapper}>
-        <AntDesign name="user" size={50} color="white" />
-        <Text style={{ color: "white" }}>
-          Profile
-        </Text>
-      </View>
+const Icons = ({ navigation }) => (
+  <View style={styles.iconsContainer}>
+    <View style={styles.iconWrapper}>
+      <Pressable onPress={() => navigation.navigate("Carpark")}>
+        <FontAwesome name="car" size={50} color="white" />
+        <Text style={styles.iconText}>Parking</Text>
+      </Pressable>
     </View>
-  );
-}
+    <View style={styles.iconWrapper}>
+      <Pressable onPress={() => navigation.navigate("BusTime")}>
+        <FontAwesome5 name="bus" size={50} color="white" />
+        <Text style={styles.iconText}>Bus</Text>
+      </Pressable>
+    </View>
+    <View style={styles.iconWrapper}>
+      <Pressable onPress={() => navigation.navigate("Taxi")}>
+        <FontAwesome5 name="taxi" size={50} color="white" />
+        <Text style={styles.iconText}>Taxi</Text>
+      </Pressable>
+    </View>
+  </View>
+);
+
+const BtmIcons = ({ navigation }) => (
+  <View style={styles.btmIconsContainer}>
+    <Pressable style={styles.btmIconWrapper} onPress={() => navigation.navigate("Settings")}>
+      <Ionicons name="settings-sharp" size={30} color="white" />
+      <Text style={styles.btmIconText}>Settings</Text>
+    </Pressable>
+    <Pressable style={styles.btmIconWrapper} onPress={() => navigation.navigate("Home")}>
+      <Entypo name="home" size={30} color="white" />
+      <Text style={styles.btmIconText}>Home</Text>
+    </Pressable>
+    <Pressable style={styles.btmIconWrapper} onPress={() => navigation.navigate("Profile")}>
+      <AntDesign name="user" size={30} color="white" />
+      <Text style={styles.btmIconText}>Profile</Text>
+    </Pressable>
+  </View>
+);
 
 const TabLayout = ({ navigation }) => {
   useEffect(() => {
-    const backAction = () => {
-      // Disable Android back button
-      return true;
-    };
-
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction
-    );
-
+    const backAction = () => true;
+    const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction);
     return () => backHandler.remove();
   }, []);
 
-  
   return (
     <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.mainContainer}>
-      <SafeAreaView style={{flex:1}}>
-      <StatusBar backgroundColor='gray' barStyle="light-content" />
-      <Welcomeuser navigation={navigation} />
-      <Icons navigation={navigation} />
-      <BtmIcons />
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar backgroundColor='gray' barStyle="light-content" />
+        <Welcomeuser navigation={navigation} />
+        <Icons navigation={navigation} />
       </SafeAreaView>
+      <BtmIcons navigation={navigation} />
     </LinearGradient>
   );
-}
+};
 
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    padding: 0,
-    //backgroundColor: "#1F1F23"
+  },
+  safeArea: {
+    flex: 1,
+    padding: 10,
   },
   container: {
-    marginTop: 30,
     flexDirection: 'row',
     alignItems: "center",
-    flex: 0.1
+    marginTop: 10,
   },
   tinyLogo: {
     height: 100,
     width: 100,
-    alignItems: "flex-start"
   },
   modal: {
-    marginLeft: 230,
+    marginLeft: 'auto',
     flexDirection: 'row',
     alignItems: 'center',
   },
   welcomeContainer: {
     flexDirection: "row",
-    alignItems: "flex-start",
- //   marginLeft: 10,
-  //  marginTop: 20,
+    alignItems: "center",
     backgroundColor: '#CFE2F3',
     height: 100,
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
+    padding: 10,
   },
   welcomeText: {
     fontSize: 25,
-    marginRight: 5,
-    marginLeft: 12,
-    fontFamily: 'Roboto',
     fontWeight: "bold",
     color: 'black',
-    marginTop: 30,
+    marginRight: 5,
   },
   userText: {
     fontSize: 25,
     color: '#444EC1',
-    fontFamily: 'Roboto',
     fontWeight: "bold",
     marginLeft: 3,
-    marginTop: 30,
   },
-  IconsContainer: {
+  logoutContainer: {
+    marginLeft: 'auto',
+  },
+  iconsContainer: {
     flexDirection: 'row',
-    //justifyContent: 'center',
-    marginTop: 250,
-    //paddingTop: 10,
-    //paddingBottom: 20,
+    justifyContent: 'space-around',
+    marginTop: 230,
     backgroundColor: "rgba(80, 82 , 108, 0.3)",
     borderRadius: 20,
-    flex: 0.3
+    paddingVertical: 20,
   },
   iconWrapper: {
-    //marginRight: 30,
-    flex:0.333,
+    flex: 0.333,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent:'center'
-  },
-  iconCar: {
-    flex: 0.333,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent:'center',
+    justifyContent: 'center'
   },
   iconText: {
-    fontSize: 15,
-    textAlign: 'center',
     color: "white",
-    //marginRight:10,
-  },
-  parkingText:{
-    fontSize: 15,
     textAlign: 'center',
-    color: "white",
-    //marginRight:10,
+    marginTop: 5,
+    fontSize: 15,
   },
-  BtmIconsContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "rgba(80, 82 , 108, 0.3)",
-    flex: 0.2,
+  btmIconsContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: "#282c34",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.30,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
-  BtmIconsWrapper: {
-    flex: 0.33,
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  BtmIconsText: {
-    fontSize: 20,
-    marginTop: 10,
-    textAlign: 'center',
-    color: "white"
-  },
-  Divider: {
-    width: 1,
-    height: "100%",
-    backgroundColor: "white",
-    marginHorizontal: 10,
-  },
-  iconPressed:{
-    flex: 0.333,
-    flexDirection: 'column',
+  btmIconWrapper: {
     alignItems: 'center',
-    justifyContent:'center',
-    backgroundColor:'rgba(60, 62, 88, 0.3)'
-  }
+  },
+  btmIconText: {
+    color: 'white',
+    marginTop: 5,
+  },
 });
 
 export default TabLayout;
