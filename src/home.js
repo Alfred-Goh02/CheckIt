@@ -4,6 +4,10 @@ import { Link } from 'expo-router';
 import { Pressable, View, Text, StyleSheet, Image, StatusBar, SafeAreaView, BackHandler } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from './Authprovider';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
+import Profile from './Profile';
+import Settings from './settings';
 
 const Logomodal = () => (
   <View style={styles.container}>
@@ -81,6 +85,8 @@ const BtmIcons = ({ navigation }) => (
   </View>
 );
 
+const BtmTab = createBottomTabNavigator();
+
 const TabLayout = ({ navigation }) => {
   useEffect(() => {
     const backAction = () => true;
@@ -89,16 +95,73 @@ const TabLayout = ({ navigation }) => {
   }, []);
 
   return (
+
+      <BtmTab.Navigator initialRouteName='Home' tabBar={props => <TabBar {...props} />} screenOptions={{headerShown:false}}>
+        <BtmTab.Screen name="Home" component={Homescreen} />
+        <BtmTab.Screen name="Profile" component={Profile} />
+        <BtmTab.Screen name="Settings" component={Settings} />
+      </BtmTab.Navigator>
+
+  );
+};
+
+function TabBar({ state, descriptors, navigation }) {
+  return (
+    <View style={styles.btmIconsContainer}>
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const label = options.tabBarLabel !== undefined
+          ? options.tabBarLabel
+          : options.title !== undefined
+          ? options.title
+          : route.name;
+
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        return (
+          <Pressable
+            key={index}
+            accessibilityRole="button"
+            accessibilityStates={isFocused ? ['selected'] : []}
+            accessibilityLabel={options.tabBarAccessibilityLabel}
+            testID={options.tabBarTestID}
+            onPress={onPress}
+            style={styles.btmIconWrapper}
+          >
+            <Ionicons name={label === 'Settings' ? 'settings-sharp' : label === 'Home' ? 'home' : 'person'} size={30} color={isFocused ? 'white' : 'gray'} />
+            <Text style={[styles.btmIconText, { color: isFocused ? 'white' : 'gray' }]}>
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+const Homescreen = ({ navigation }) => {
+  return (
     <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.mainContainer}>
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor='gray' barStyle="light-content" />
         <Welcomeuser navigation={navigation} />
         <Icons navigation={navigation} />
       </SafeAreaView>
-      <BtmIcons navigation={navigation} />
     </LinearGradient>
   );
-};
+} 
 
 const styles = StyleSheet.create({
   mainContainer: {
@@ -170,8 +233,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#282c34",
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    //borderTopLeftRadius: 20,
+    //borderTopRightRadius: 20,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
