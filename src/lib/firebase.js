@@ -1,4 +1,3 @@
-// lib/firebase.js or lib/firebase.ts
 import { initializeApp } from 'firebase/app';
 import { getAuth, initializeAuth, getReactNativePersistence, onAuthStateChanged, 
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
