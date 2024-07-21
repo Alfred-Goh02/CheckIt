@@ -3,7 +3,7 @@ import { Pressable, View, Text, StyleSheet, Image, StatusBar, TextInput, ScrollV
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../src/Authprovider';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -27,7 +27,10 @@ const LoginScreen = ({ navigation }) => {
     try {
       const success = await signIn(email, password);
       if (success) {
-        navigation.navigate('Home');
+        await AsyncStorage.setItem('email', email);
+        await AsyncStorage.setItem('password',password);
+        console.log(email, password);
+        navigation.replace('Home');  
       }
     } catch (error) {
       Alert.alert('Error', error.message);

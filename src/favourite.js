@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const Settings = () => {
+const Favourite = () => {
+
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Settings</Text>
@@ -20,4 +21,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Settings;
+export default Favourite;

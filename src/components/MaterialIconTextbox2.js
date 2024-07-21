@@ -1,22 +1,27 @@
-import React, { Component } from "react";
+import React from "react";
 import { StyleSheet, View, TextInput } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-function MaterialIconTextbox2(props) {
+function MaterialIconTextbox2({ password }) {
   return (
-    <View style={[styles.container, props.style]}>
-      <Icon name="asterisk" style={styles.iconStyle}></Icon>
+    <View style={styles.container}>
+      <Icon name="asterisk" style={styles.iconStyle} />
       <TextInput
         placeholder="Password"
-        secureTextEntry={true}
+        secureTextEntry={false}
         style={styles.inputStyle}
-      ></TextInput>
+        value={password}
+        editable={false}
+        color="#D9D5DC"
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    marginLeft:40,
     backgroundColor: "transparent",
     flexDirection: "row",
     alignItems: "center"

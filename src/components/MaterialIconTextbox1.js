@@ -1,16 +1,20 @@
-import React, { Component } from "react";
+import React from "react";
 import { StyleSheet, View, TextInput } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-function MaterialIconTextbox1(props) {
+function MaterialIconTextbox1({ email }) {
   return (
-    <View style={[styles.container, props.style]}>
-      <Icon name="email" style={styles.iconStyle}></Icon>
+    <View style={styles.container}>
+      <Icon name="email" style={styles.iconStyle} />
       <TextInput
         placeholder="Email"
-        secureTextEntry={true}
+        secureTextEntry={false}
         style={styles.inputStyle}
-      ></TextInput>
+        value={email}
+        editable={false}
+        color="#D9D5DC"
+      />
     </View>
   );
 }
@@ -19,7 +23,8 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "transparent",
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
+    marginLeft:40,
   },
   iconStyle: {
     color: "rgba(144,19,254,1)",

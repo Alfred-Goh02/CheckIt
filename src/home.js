@@ -7,7 +7,14 @@ import { useAuth } from './Authprovider';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import Profile from './Profile';
-import Settings from './settings';
+import Settings from './favourite';
+import { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db } from './lib/firebase';
+import { collection, doc, setDoc, getDoc } from "firebase/firestore";
+import { getAuth } from 'firebase/auth';
+import Favourite from './favourite';
+import { Header } from 'react-native/Libraries/NewAppScreen';
 
 const Logomodal = () => (
   <View style={styles.container}>
@@ -24,18 +31,49 @@ const Logomodal = () => (
   </View>
 );
 
+
 const Welcomeuser = ({ navigation }) => {
   const { signOut } = useAuth();
-
+  const [username, setUsername] = useState('');
   const handleSignOut = async () => {
     await signOut();
     navigation.replace('Login');
   };
 
+
+  const fetchDB = async () => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (user) {
+        const userRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(userRef);
+
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setUsername(userData.username);
+          await AsyncStorage.setItem('userData', JSON.stringify(userData));
+        } else {
+          console.log("No such document!");
+        }
+      } else {
+        console.log("No user is currently signed in.");
+      }
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+    }
+  };
+  
+  useEffect(() => {
+    fetchDB();
+  }, []);
+
+    
+
   return (
     <SafeAreaView style={styles.welcomeContainer}>
       <Text style={styles.welcomeText}>Welcome back!</Text>
-      <Text style={styles.userText}>User</Text>
+      <Text style={styles.userText}>{username}</Text>
       <View style={styles.logoutContainer}>
         <Pressable onPress={handleSignOut}>
           <Entypo name="log-out" size={30} color="black" />
@@ -74,7 +112,7 @@ const BtmIcons = ({ navigation }) => (
       <Ionicons name="settings-sharp" size={30} color="white" />
       <Text style={styles.btmIconText}>Settings</Text>
     </Pressable>
-    <Pressable style={styles.btmIconWrapper} onPress={() => navigation.navigate("Home")}>
+    <Pressable style={styles.btmIconWrapper} onPress={() => navigation.navigate("HomeScreen")}>
       <Entypo name="home" size={30} color="white" />
       <Text style={styles.btmIconText}>Home</Text>
     </Pressable>
@@ -95,13 +133,11 @@ const TabLayout = ({ navigation }) => {
   }, []);
 
   return (
-
-      <BtmTab.Navigator initialRouteName='Home' tabBar={props => <TabBar {...props} />} screenOptions={{headerShown:false}}>
-        <BtmTab.Screen name="Home" component={Homescreen} />
-        <BtmTab.Screen name="Profile" component={Profile} />
-        <BtmTab.Screen name="Settings" component={Settings} />
-      </BtmTab.Navigator>
-
+    <BtmTab.Navigator initialRouteName="HomeScreen" tabBar={props => <TabBar {...props} />} screenOptions={{headerShown:false}}>
+      <BtmTab.Screen name="HomeScreen" component={Homescreen} />
+      <BtmTab.Screen name="Profile" component={Profile} />
+      <BtmTab.Screen name="Favourite" component={Favourite} />
+    </BtmTab.Navigator>
   );
 };
 
@@ -140,7 +176,7 @@ function TabBar({ state, descriptors, navigation }) {
             onPress={onPress}
             style={styles.btmIconWrapper}
           >
-            <Ionicons name={label === 'Settings' ? 'settings-sharp' : label === 'Home' ? 'home' : 'person'} size={30} color={isFocused ? 'white' : 'gray'} />
+            <Ionicons name={label === 'Favourite' ? 'heart-sharp' : label === 'HomeScreen' ? 'home' : 'person'} size={30} color={isFocused ? 'white' : 'gray'} />
             <Text style={[styles.btmIconText, { color: isFocused ? 'white' : 'gray' }]}>
               {label}
             </Text>
@@ -161,7 +197,7 @@ const Homescreen = ({ navigation }) => {
       </SafeAreaView>
     </LinearGradient>
   );
-} 
+}
 
 const styles = StyleSheet.create({
   mainContainer: {

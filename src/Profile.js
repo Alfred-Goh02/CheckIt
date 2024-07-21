@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
-import Svg, { Ellipse } from "react-native-svg";
 import Icon from "react-native-vector-icons/Ionicons";
 import MaterialIconTextbox from "./components/MaterialIconTextbox";
 import MaterialIconTextbox1 from "./components/MaterialIconTextbox1";
@@ -8,23 +7,69 @@ import MaterialIconTextbox2 from "./components/MaterialIconTextbox2";
 import MaterialIconTextbox3 from "./components/MaterialIconTextbox3";
 import MaterialIconTextbox4 from "./components/MaterialIconTextbox4";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { auth, db } from "./lib/firebase";
+import { getAuth } from 'firebase/auth';
+import { collection, doc, setDoc } from "firebase/firestore";
 
-const Profile = (props) => {
+const Profile = ({ navigation, route }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+
+  useEffect(() => {
+    const loadCredentials = async () => {
+      const storedEmail = await AsyncStorage.getItem('email');
+      const storedPassword = await AsyncStorage.getItem('password');
+      const storedUsername = await AsyncStorage.getItem('username');
+      if (storedEmail && storedPassword && storedUsername) {
+        setEmail(storedEmail);
+        setPassword(storedPassword);
+        setUsername(storedUsername);
+      }
+    };
+    loadCredentials();
+  }, []);
+
+  const updateUserProfile = async () => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser; // Use await here
+      const Username =  await AsyncStorage.getItem('username');
+      const Contact = await AsyncStorage.getItem('contact');
+      const Gender = await AsyncStorage.getItem('gender');
+      if (user) {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(userRef, {
+          email: email,
+          password: password,
+          username: Username,
+          contact: Contact,
+          gender: Gender
+        });
+  
+        alert('Profile updated successfully!');
+      } else {
+        alert('No user is logged in!');
+      }
+    } catch (error) {
+      console.error("Error updating profile: ", error);
+      alert('Failed to update profile. Please try again.');
+    }
+  };
+  
   return (
     <SafeAreaView style={styles.container}>
-    
       <Icon name="person" style={styles.icon} />
-    
-      {/* Main Content */}
       <View style={styles.rect2}>
         <View style={styles.rect3} />
         <View style={styles.materialIconTextboxStack}>
           <MaterialIconTextbox style={styles.materialIconTextbox} />
-          <MaterialIconTextbox1 style={styles.materialIconTextbox13} />
+          <MaterialIconTextbox1 style={styles.materialIconTextbox13} email={email}/>
         </View>
         <View style={styles.rect4} />
         <View style={styles.rect5} />
-        <MaterialIconTextbox2 style={styles.materialIconTextbox2} />
+        <MaterialIconTextbox2 style={styles.materialIconTextbox2} password={password}/>
         <View style={styles.rect6} />
         <View style={styles.materialIconTextbox3Stack}>
           <MaterialIconTextbox3 style={styles.materialIconTextbox3} />
@@ -33,12 +78,7 @@ const Profile = (props) => {
         <View style={styles.rect7} />
         <View style={styles.rect8} />
       </View>
-
-      {/* Save Changes Button */}
-      <TouchableOpacity
-        onPress={() => props.navigation.navigate("Untitled")}
-        style={styles.button}
-      >
+      <TouchableOpacity onPress={updateUserProfile} style={styles.button}>
         <Text style={styles.saveChanges}>Save Changes</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -51,22 +91,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,1)",
     alignItems: "center",
   },
-  ellipse: {
-    width: 100,
-    height: 100,
-    backgroundColor: "rgba(74,144,226,1)",
-    borderRadius: 50,
-    transform: [
-    {scaleX: 4}
-]
-  },
-  ellipse2: {
-    position: "absolute",
-    top: 127,
-    left: 127,
-    width: 127,
-    height: 127,
-  },
   icon: {
     position: "absolute",
     top: 100,
@@ -74,7 +98,7 @@ const styles = StyleSheet.create({
     fontSize: 90,
   },
   rect2: {
-    marginTop: 220, // Adjust the marginTop to create space for the ellipse
+    marginTop: 220,
     width: "100%",
     height: 340,
     backgroundColor: "white",
@@ -162,7 +186,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,1)",
     fontSize: 20,
     fontWeight: "bold",
-    position:"absolute"
+    position: "absolute"
   },
 });
 
