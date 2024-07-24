@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { db } from './lib/firebase';
 import { getAuth } from 'firebase/auth';
+import CPFavouritesTab from './cpFavsTab';
 
 const Favourite = () => {
   const layout = useWindowDimensions();
@@ -35,7 +36,7 @@ const Favourite = () => {
   );
 
   const renderScene = SceneMap({
-    car: CarScreen,
+    car: CPFavouritesTab,
     bus: BusScreen,
   });
 

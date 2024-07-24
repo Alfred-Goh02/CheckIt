@@ -10,6 +10,7 @@ import Signup from './src/signup';
 import BusTime from './src/bustime';
 import Carpark from './src/carparks';
 import Taxi from './src/taxis';
+import CPFavourites from './src/cpFavs';
 
 const Stacks = createNativeStackNavigator();
 
@@ -48,6 +49,11 @@ function AuthNavigator() {
         component={Taxi}
         options={{ headerShown: true, headerStyle: { backgroundColor: "#B0E0E6" }}}
       />
+      <Stacks.Screen 
+        name='CPFavourites'
+        component={CPFavourites}
+        options={{headerStyle:{backgroundColor:"#B0E0E6"}}}
+        />
     </Stacks.Navigator>
   );
 }

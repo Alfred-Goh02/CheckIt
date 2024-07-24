@@ -3,25 +3,23 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
 import axios from 'axios';
+import * as Location from 'expo-location';
 import { Pressable, View, Text, StyleSheet, ScrollView, TextInput, ActivityIndicator, Button } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from './lib/firebase';
+import CPFavourites from './cpFavs';
 
-/* Left with using firebase and settle the close dropdowns permanently when search or click back to homepage 
- *find if there are data avail for heavy veh & motorcycles separately
- *Also to set favourites as the first few to pop out 
- *Duplicate weird searches (search RHM3) */ 
-
-export default function CarPark() {
-
-  const navigation = useNavigation();
+export default function Carpark() {
 
   // State variables
   const [carParks, setCarParks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [location, setLocation] = useState(null);
   const carParksPerPage = 10;
 
   // Fetch data on component mount and set interval for auto-refresh
@@ -47,7 +45,7 @@ export default function CarPark() {
             'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
             'Accept': 'application/json',
           },
-        }); 
+        });
 
         const carparkData = response.data.value;
 
@@ -59,25 +57,47 @@ export default function CarPark() {
         }
       }
 
-      const [favs, dropdowns] = await Promise.all([
-        AsyncStorage.getItem('favourites'),
-        AsyncStorage.getItem('dropdowns'),
-      ]);
-
-      const favouriteCarParks = favs ? JSON.parse(favs) : {};
+      const dropdowns = await AsyncStorage.getItem('CPdropdowns');
       const dropdownStates = dropdowns ? JSON.parse(dropdowns) : {};
 
-      const formattedCarParks = allCarParks.map(carpark => ({
-        carparkName: carpark.Development, // Use development as carpark name
-        area: carpark.Area,
-        carparkID: carpark.CarParkID, // carpark code
-        location: carpark.Location, // longitude
-        spacesAvailable: carpark.AvailableLots,
-        lotType: carpark.LotType,
-        agency: carpark.Agency, // LTA or HDB etc
-        isFavourite: !!favouriteCarParks[carpark.Development], // Check if it's a favourite
-        isOpen: !!dropdownStates[carpark.Development], // Check if dropdown is open
-      }));
+      // Fetch favorites from Firestore
+      const user = auth.currentUser;
+      let favouriteCarParks = {};
+      if (user) {
+        const userId = user.uid;
+        const favouriteRef = doc(db, 'users', userId, 'favorites', 'carParks');
+        const docSnapshot = await getDoc(favouriteRef);
+        if (docSnapshot.exists()) {
+          favouriteCarParks = docSnapshot.data().favorites || {};
+        }
+      }
+
+      // Consolidate carparks by name
+      const carparkMap = {};
+
+      allCarParks.forEach(carpark => {
+        const name = carpark.Development;
+
+        if (!carparkMap[name]) {
+          carparkMap[name] = {
+            carparkName: name,
+            area: carpark.Area || 'Others',
+            carparkID: carpark.CarParkID,
+            location: carpark.Location,
+            agency: carpark.Agency,
+            vehicleTypes: [],
+            isFavourite: !!favouriteCarParks[name],
+            isOpen: !!dropdownStates[name],
+          };
+        }
+
+        carparkMap[name].vehicleTypes.push({
+          lotType: carpark.LotType,
+          spacesAvailable: carpark.AvailableLots,
+        });
+      });
+
+      const formattedCarParks = Object.values(carparkMap);
 
       setCarParks(formattedCarParks);
       setLoading(false);
@@ -87,16 +107,52 @@ export default function CarPark() {
     }
   };
 
-  // Save favourites to AsyncStorage
-  const saveFavourites = async (updatedCarParks) => {
-    const favourites = updatedCarParks.reduce((acc, carPark) => {
-      if (carPark.isFavourite) {
-        acc[carPark.carparkName] = true;
-      }
-      return acc;
-    }, {});
+  // Get user's current location
+  const getLocation = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('Permission to access location was denied');
+      return;
+    }
 
-    await AsyncStorage.setItem('favourites', JSON.stringify(favourites));
+    let location = await Location.getCurrentPositionAsync({});
+    setLocation(location);
+
+    filterNearbyCarparks(location); // Filter nearby carparks when location is obtained
+  };
+
+  // Filter carparks based on the user's location
+  const filterNearbyCarparks = (location) => {
+    if (!location) {
+      console.log('No location data available');
+      return;
+    }
+
+    const { latitude, longitude } = location.coords;
+    const filteredCarParks = carParks.filter(carpark => {
+      const [carparkLat, carparkLon] = carpark.location.split(' ').map(Number);
+      const distance = getDistance(latitude, longitude, carparkLat, carparkLon);
+      return distance <= 5000; // Filter carparks within 5km radius
+    });
+
+    setCarParks(filteredCarParks);
+  };
+
+  // Calculate distance between two coordinates using Haversine formula
+  const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3; // metres
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2 - lat1) * Math.PI/180;
+    const Δλ = (lon2 - lon1) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    const d = R * c; // in metres
+    return d;
   };
 
   // Save dropdown states to AsyncStorage
@@ -108,21 +164,43 @@ export default function CarPark() {
       return acc;
     }, {});
 
-    await AsyncStorage.setItem('dropdowns', JSON.stringify(dropdowns));
+    await AsyncStorage.setItem('CPdropdowns', JSON.stringify(dropdowns));
   };
 
-  // Toggle favourite state of a car park
-  const toggleFavourite = (carparkName) => {
+  // Toggle favorite state of a car park
+  const toggleFavourite = async (carparkName) => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("User is not authenticated.");
+      return;
+    }
+
+    const userId = user.uid;
+    const favouriteRef = doc(db, 'users', userId, 'favorites', 'carParks');
+    const docSnapshot = await getDoc(favouriteRef);
+
+    let currentFavourites = {};
+    if (docSnapshot.exists()) {
+      currentFavourites = docSnapshot.data().favorites || {};
+    }
+
+    if (currentFavourites[carparkName]) {
+      delete currentFavourites[carparkName];
+    } else {
+      currentFavourites[carparkName] = true;
+    }
+
+    // Save the updated favorites to Firestore
+    await setDoc(favouriteRef, { favorites: currentFavourites });
+
+    // Update local state
     setCarParks(prevCarParks => {
-      const updatedCarParks = prevCarParks.map(carpark => {
+      return prevCarParks.map(carpark => {
         if (carpark.carparkName === carparkName) {
           return { ...carpark, isFavourite: !carpark.isFavourite };
         }
         return carpark;
       });
-
-      saveFavourites(updatedCarParks);
-      return updatedCarParks;
     });
   };
 
@@ -144,18 +222,16 @@ export default function CarPark() {
   // Handle search query change
   const handleSearchChange = (query) => {
     setSearchQuery(query);
-
-    // Close all dropdowns when search query changes
-    setCarParks(prevCarParks =>
-      prevCarParks.map(carPark => ({ ...carPark, isOpen: false }))
-    );
+    closeAllDropdowns();
   };
 
   // Function to close all dropdowns
   const closeAllDropdowns = () => {
-    setCarParks(prevCarParks =>
-      prevCarParks.map(carPark => ({ ...carPark, isOpen: false }))
-    );
+    setCarParks(prevCarParks => {
+      const updatedCarParks = prevCarParks.map(carPark => ({ ...carPark, isOpen: false }));
+      saveDropdowns(updatedCarParks); 
+      return updatedCarParks;
+    });
   };
 
   // Filter car parks based on the search query
@@ -172,12 +248,6 @@ export default function CarPark() {
     setCurrentPage(prevPage => prevPage + 1);
   };
 
-  // Handle navigation back press and close all dropdowns
-  const handleBackPress = () => {
-    navigation.goBack();
-    closeAllDropdowns();
-  };
-
   // Show loading indicator while fetching data
   if (loading) {
     return (
@@ -190,11 +260,13 @@ export default function CarPark() {
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
       <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.container}>
-        <Pressable style={styles.backButton} onPress={handleBackPress}>
-          <Ionicons name="arrow-back" size={28} color="white" />
-        </Pressable>
-        <Header />
-        <SearchBar value={searchQuery} onChangeText={handleSearchChange} />
+        <Header closeAllDropdowns={closeAllDropdowns} />
+        <View style={styles.locationBox}>
+          <SearchBar value={searchQuery} onChangeText={handleSearchChange} />
+          <Pressable style={styles.loadNearbyButton} onPress={getLocation}>
+            <Ionicons name="location-sharp" size={34} color="white" />
+          </Pressable>
+        </View>
         <CarParkList
           carParks={displayedCarParks}
           toggleFavourite={toggleFavourite}
@@ -209,14 +281,35 @@ export default function CarPark() {
   );
 }
 
-// Header component 
-const Header = () => {
+
+// Header component
+const Header = ({ closeAllDropdowns }) => {
+  const navigation = useNavigation();
+
+  const handleBackPress = () => {
+    closeAllDropdowns();
+    navigation.goBack();
+  };
+
+  const handleFavoritesPress = () => {
+    closeAllDropdowns();
+    navigation.navigate('CPFavourites');
+  };
+
   return (
     <View style={styles.header}>
+      <Pressable style={styles.backButton} onPress={handleBackPress}>
+        <Ionicons name="arrow-back" size={28} color="white" />
+      </Pressable>
       <Text style={styles.headerText}>Car Parks</Text>
+      <Ionicons name="chevron-forward" size={28} color="white" />
+      <Pressable style={styles.favoritesButton} onPress={handleFavoritesPress}>
+        <Ionicons name="heart" size={30} color="white" />
+      </Pressable>
     </View>
   );
 };
+
 
 // List component to display car parks
 const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchData }) => {
@@ -253,8 +346,12 @@ const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchData }) =
           </View>
           {carPark.isOpen && (
             <View style={styles.dropdownContent}>
-              <Text style={styles.carParkType}>Type: {lotTypeMapping[carPark.lotType]}</Text>
-              <Text style={styles.carParkAvailability}>Available: {carPark.spacesAvailable}</Text>
+              <Text style={styles.carParkAvail}>Available Lots</Text>
+              {carPark.vehicleTypes.map((vehicle, i) => (
+                <View key={i} style={styles.vehicleTypeContainer}>
+                  <Text style={styles.carParkType}>{lotTypeMapping[vehicle.lotType]}: {vehicle.spacesAvailable}</Text>
+                </View>
+              ))}
             </View>
           )}
         </View>
@@ -262,6 +359,7 @@ const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchData }) =
     </View>
   );
 };
+
 
 // Heart icon component for favourites
 const HeartIcon = ({ filled }) => {
@@ -305,12 +403,16 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 8,
     borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerText: {
-    color: 'white',
+    color: '#FFFFF0',
     fontSize: 24,
     fontWeight: 'bold',
-    marginLeft: 5,
+    flex: 1, 
+    textAlign: 'center', 
   },
   carParkWrapper: {
     marginBottom: 16,
@@ -330,15 +432,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  carParkAvail: {
+    fontSize: 18,
+    color: 'black',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+  },
   carParkType: {
     fontSize: 18,
     color: 'black',
-   // fontWeight: 'bold',
-  },
-  carParkAvailability: {
-    fontSize: 18,
-    color: 'black',
-  //  fontWeight: 'bold',
   },
   shortName: {
     fontSize: 15,
@@ -353,9 +455,14 @@ const styles = StyleSheet.create({
   searchBar: {
     backgroundColor: '#FFFFF0',
     padding: 10,
-    marginBottom: 12,
     borderRadius: 30,
     fontSize: 16,
+    flex: 1,
+  },
+  locationBox: {
+    flexDirection: 'row',
+    alignItems: 'center', 
+    marginBottom: 12,
   },
   loadingContainer: {
     flex: 1,
@@ -373,8 +480,8 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   backButton: {
-    top: 10,
-    left: 10,
+    top: 5,
+    left: 5,
     zIndex: 10,
     marginBottom: 10,
   },
@@ -386,5 +493,12 @@ const styles = StyleSheet.create({
     padding: 10,
     marginTop: 5,
     borderRadius: 10,
+  },
+  loadNearbyButton: {
+    padding: 10,
+    borderRadius: 30,
+    backgroundColor: '#4682B4',
+    marginLeft: 8, 
+    flexShrink: 0,
   },
 });

@@ -134,9 +134,9 @@ const TabLayout = ({ navigation }) => {
 
   return (
     <BtmTab.Navigator initialRouteName="HomeScreen" tabBar={props => <TabBar {...props} />} screenOptions={{headerShown:false}}>
-      <BtmTab.Screen name="HomeScreen" component={Homescreen} />
-      <BtmTab.Screen name="Profile" component={Profile} />
-      <BtmTab.Screen name="Favourite" component={Favourite} />
+      <BtmTab.Screen name="HomeScreen" component={Homescreen} options={{unmountOnBlur:true}} />
+      <BtmTab.Screen name="Profile" component={Profile} options={{unmountOnBlur:true}}/>
+      <BtmTab.Screen name="Favourite" component={Favourite} options={{unmountOnBlur:true}}/>
     </BtmTab.Navigator>
   );
 };
