@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Pressable, View, Text, StyleSheet, Image, StatusBar, TextInput, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../src/Authprovider';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Forgotpw from './forgetpw';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -54,7 +55,7 @@ const LoginScreen = ({ navigation }) => {
               value={email}
               onChangeText={setEmail}
               style={styles.input}
-              placeholder='Type your username'
+              placeholder='Type your email'
               autoCapitalize='none'
               keyboardType='email-address'
             />
@@ -70,7 +71,7 @@ const LoginScreen = ({ navigation }) => {
             />
           </View>
           <View style={styles.forgotpwContainer}>
-            <Pressable onPress={() => Alert.alert('Forgot Password', 'Password recovery not implemented yet.')}>
+            <Pressable onPress={() => navigation.navigate('Forgot Password')}>
               <Text style={styles.forgotpwText}>Forgot Password?</Text>
             </Pressable>
           </View>

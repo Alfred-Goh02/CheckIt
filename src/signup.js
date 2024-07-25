@@ -42,13 +42,13 @@ const Signup = () => {
                 <View style={styles.signupContainer}>
                     <View style={styles.textfieldContainer}>
                         <Text style={styles.label}>
-                            Username
+                            Email
                         </Text>
                         <TextInput
                             value={email}
                             onChangeText={setEmail}
                             style={styles.input}
-                            placeholder='Type your username'
+                            placeholder='Type your email'
                         />
                     </View>
                     <View style={styles.textfieldContainer}>

@@ -11,7 +11,7 @@ import BusTime from './src/bustime';
 import Carpark from './src/carparks';
 import Taxi from './src/taxis';
 import CPFavourites from './src/cpFavs';
-
+import Forgotpw from './src/forgetpw';
 const Stacks = createNativeStackNavigator();
 
 function AuthNavigator() {
@@ -53,7 +53,12 @@ function AuthNavigator() {
         name='CPFavourites'
         component={CPFavourites}
         options={{headerStyle:{backgroundColor:"#B0E0E6"}}}
-        />
+      />
+      <Stacks.Screen
+        name='Forgot Password'
+        component={Forgotpw}
+        options={{headerStyle:{backgroundColor:"#B0E0E6"}}}
+      />
     </Stacks.Navigator>
   );
 }
