@@ -43,7 +43,6 @@ const Forgotpw = () => {
     );
 }
 
-const resetPW = async() => {}
 
 const GradientButton = ({ loading }) => (
     <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.button}>
