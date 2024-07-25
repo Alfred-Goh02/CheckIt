@@ -6,6 +6,7 @@ import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { db } from './lib/firebase';
 import { getAuth } from 'firebase/auth';
 import CPFavouritesTab from './cpFavsTab';
+import BusFavouritesTab from './busFavsTab';
 
 const Favourite = () => {
   const layout = useWindowDimensions();
@@ -37,7 +38,7 @@ const Favourite = () => {
 
   const renderScene = SceneMap({
     car: CPFavouritesTab,
-    bus: BusScreen,
+    bus: BusFavouritesTab,
   });
 
   return (
