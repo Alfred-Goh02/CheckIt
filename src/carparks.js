@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -11,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import CPFavourites from './cpFavs';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function Carpark() {
 
@@ -30,6 +32,13 @@ export default function Carpark() {
     // Cleanup interval on unmount
     return () => clearInterval(interval);
   }, []);
+
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [])
+  );
 
   // Fetch data from carpark API
   const fetchData = async () => {
