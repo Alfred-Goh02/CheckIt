@@ -173,6 +173,7 @@ export default function CPFavourites() {
           carParks={favouriteCarParks}
           toggleFavourite={toggleFavourite}
           toggleDropdown={toggleDropdown}
+          fetchCarparkDetails={fetchCarparkDetails}
         />
       </LinearGradient>
     </ScrollView>
@@ -198,7 +199,7 @@ const Header = ({ closeAllDropdowns }) => {
   );
 };
 
-const CarParkList = ({ carParks, toggleFavourite, toggleDropdown }) => {
+const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchCarparkDetails }) => {
   const lotTypeMapping = {
     C: 'Cars',
     H: 'Heavy Vehicles',
