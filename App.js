@@ -29,7 +29,7 @@ function AuthNavigator() {
       <Stacks.Screen
         name="Home"
         component={TabLayout}
-        options={{ headerShown: false }} 
+        options={{ headerShown: false }}
       />
       <Stacks.Screen
         name="Signup"
@@ -49,22 +49,22 @@ function AuthNavigator() {
       <Stacks.Screen
         name="Taxi"
         component={Taxi}
-        options={{ headerShown: true, headerStyle: { backgroundColor: "#B0E0E6" }}}
+        options={{ headerShown: true, headerStyle: { backgroundColor: "#B0E0E6" } }}
       />
-      <Stacks.Screen 
+      <Stacks.Screen
         name='CPFavourites'
         component={CPFavourites}
-        options={{headerStyle:{backgroundColor:"#B0E0E6"}}}
+        options={{ headerShown: false }}
       />
       <Stacks.Screen
         name='Forgot Password'
         component={Forgotpw}
-        options={{headerStyle:{backgroundColor:"#B0E0E6"}}}
+        options={{ headerStyle: { backgroundColor: "#B0E0E6" } }}
       />
       <Stacks.Screen
-        name= 'BusFavourites'
+        name='BusFavourites'
         component={BusFavourites}
-        options={{headerStyle:{backgroundColor:"#B0E0E6"}}}
+        options={{ headerShown: false }}
       />
     </Stacks.Navigator>
   );
@@ -73,13 +73,13 @@ function AuthNavigator() {
 export default function App() {
   return (
 
-   <AuthProvider>
+    <AuthProvider>
       <NavigationContainer>
         <AuthNavigator />
       </NavigationContainer>
     </AuthProvider>
-  
-    );
+
+  );
 }
 
 const styles = StyleSheet.create({
