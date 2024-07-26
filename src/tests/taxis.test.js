@@ -9,10 +9,10 @@ import { render, waitFor } from '@testing-library/react-native';
 describe('Coordinates to KM', () => {
   it('Converts the distance of the coordinate correctly ', () => {
     //Test 1
-    lat1 = 52.5200;
-    lon1 = 13.4050;
-    lat2 = 48.8566;
-    lon2 = 2.3522;
+    let lat1 = 52.5200;
+    let lon1 = 13.4050;
+    let lat2 = 48.8566;
+    let lon2 = 2.3522;
 
     distance = getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2);
 
