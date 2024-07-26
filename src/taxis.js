@@ -88,26 +88,29 @@ export default function Taxi({ navigation }) {
     fetchTaxiData();
   }, []);
 
+  // Inside Taxi component
   if (!location) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#0000ff" testID="loading-indicator" />
       </View>
     );
   }
   return (
     <View style={{ flex: 1 }}>
-      <MapView style={styles.map} initialRegion={{
-        latitude: location.latitude,
-        longitude: location.longitude,
-        latitudeDelta: 0.1,
-        longitudeDelta: 0.1,
-      }}
+      <MapView
+        style={styles.map}
+        initialRegion={{
+          latitude: location.latitude,
+          longitude: location.longitude,
+          latitudeDelta: 0.1,
+          longitudeDelta: 0.1,
+        }}
         showsUserLocation={true}
         followsUserLocation={true}
         provider={PROVIDER_GOOGLE}
+        testID="map"
       >
-
         {taxilocation.length > 0 && location && taxilocation
           .filter(taxi => getDistanceFromLatLonInKm(location.latitude, location.longitude, taxi.Latitude, taxi.Longitude) <= 2)
           .map((taxi, index) => (
@@ -119,6 +122,7 @@ export default function Taxi({ navigation }) {
               }}
               title="Taxi"
               pinColor="red"
+              testID="taxi-marker"
             >
               <FontAwesome name="taxi" size={10} color="black" />
             </Marker>
@@ -133,23 +137,24 @@ export default function Taxi({ navigation }) {
             }}
             title={stand.Name}
             description={`Ownership: ${stand.Ownership} Type: ${stand.Type}`}
+            testID="stand-marker"
           >
             <MaterialCommunityIcons name="bus-stop-covered" size={15} color="black" />
           </Marker>
         ))}
 
-
         {location && (
           <Marker
             coordinate={location}
             title="You are here"
-            pinColor="blue" // You can customize the color or use a custom image
+            pinColor="blue"
+            testID="you-are-here-marker"
           />
-
         )}
       </MapView>
     </View>
   );
+
 };
 
 
