@@ -147,21 +147,19 @@ export default function Carpark() {
     setCarParks(filteredCarParks);
   };
 
-  // Calculate distance between two coordinates using Haversine formula
+  // Calculate distance
   const getDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371e3; // metres
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2 - lat1) * Math.PI/180;
-    const Δλ = (lon2 - lon1) * Math.PI/180;
-
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    const d = R * c; // in metres
-    return d;
+    const R = 6371; // Radius of the Earth in km
+    const toRad = Math.PI / 180;
+    lat1 *= toRad;
+    lon1 *= toRad;
+    lat2 *= toRad;
+    lon2 *= toRad;
+    const distance = Math.acos(
+      Math.sin(lat1) * Math.sin(lat2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
+    ) * R;
+    return distance;
   };
 
   // Save dropdown states to AsyncStorage
