@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from '@expo/vector-icons';
 import MaterialIconTextbox from "./components/MaterialIconTextbox";
 import MaterialIconTextbox1 from "./components/MaterialIconTextbox1";
 import MaterialIconTextbox2 from "./components/MaterialIconTextbox2";
@@ -11,6 +12,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth, db } from "./lib/firebase";
 import { getAuth } from 'firebase/auth';
 import { collection, doc, setDoc } from "firebase/firestore";
+
+const Header = () => {
+  return (
+    <View style={styles.header}>
+      <Ionicons name="chevron-back" size={28} color="white" />
+      <Text style={styles.headerText}>Profile</Text>
+      <Ionicons name="chevron-forward" size={28} color="white" />
+    </View>
+  );
+};
 
 const Profile = ({ navigation, route }) => {
   const [email, setEmail] = useState('');
@@ -60,6 +71,7 @@ const Profile = ({ navigation, route }) => {
   
   return (
     <SafeAreaView style={styles.container}>
+      <Header/>
       <Icon name="person" style={styles.icon} />
       <View style={styles.rect2}>
         <View style={styles.rect3} />
@@ -90,6 +102,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(255,255,255,1)",
     alignItems: "center",
+  },
+  header: {
+    backgroundColor: '#4682B4',
+    padding: 10,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerText: {
+    color: '#FFFFF0',
+    fontSize: 24,
+    fontWeight: 'bold',
+    flex: 1, 
+    textAlign: 'center', 
   },
   icon: {
     position: "absolute",

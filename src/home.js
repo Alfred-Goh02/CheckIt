@@ -54,7 +54,7 @@ const Welcomeuser = ({ navigation }) => {
           setUsername(userData.username);
           await AsyncStorage.setItem('userData', JSON.stringify(userData));
         } else {
-          console.log("No such document!");
+          console.log("No Username available!");
         }
       } else {
         console.log("No user is currently signed in.");
@@ -87,20 +87,26 @@ const Icons = ({ navigation }) => (
   <View style={styles.iconsContainer}>
     <View style={styles.iconWrapper}>
       <Pressable onPress={() => navigation.navigate("Carpark")}>
-        <FontAwesome name="car" size={50} color="white" />
-        <Text style={styles.iconText}>Parking</Text>
+      <View style={styles.iconTextContainer}>
+          <FontAwesome name="car" size={50} color="white" />
+          <Text style={styles.iconText}>Parking Availability</Text>
+        </View>
       </Pressable>
     </View>
     <View style={styles.iconWrapper}>
       <Pressable onPress={() => navigation.navigate("BusTime")}>
-        <FontAwesome5 name="bus" size={50} color="white" />
-        <Text style={styles.iconText}>Bus</Text>
+      <View style={styles.iconTextContainer}>
+          <FontAwesome5 name="bus" size={50} color="white" />
+          <Text style={styles.iconText}>Bus Stops</Text>
+        </View>
       </Pressable>
     </View>
     <View style={styles.iconWrapper}>
       <Pressable onPress={() => navigation.navigate("Taxi")}>
-        <FontAwesome5 name="taxi" size={50} color="white" />
-        <Text style={styles.iconText}>Taxi</Text>
+      <View style={styles.iconTextContainer}>
+          <FontAwesome5 name="taxi" size={50} color="white" />
+          <Text style={styles.iconText}>Taxi</Text>
+        </View>
       </Pressable>
     </View>
   </View>
@@ -244,24 +250,32 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   iconsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 230,
-    backgroundColor: "rgba(80, 82 , 108, 0.3)",
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 20,
     paddingVertical: 20,
   },
   iconWrapper: {
-    flex: 0.333,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    marginVertical: 20,
+    justifyContent: 'flex-start',
+    backgroundColor: '#4682B4',
+    borderRadius: 10,
+    padding: 15,
+    width: '90%',
   },
   iconText: {
     color: "white",
     textAlign: 'center',
-    marginTop: 5,
-    fontSize: 15,
+    fontSize: 25,
+    marginLeft: 20,
+  },
+  iconTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   btmIconsContainer: {
     flexDirection: 'row',
