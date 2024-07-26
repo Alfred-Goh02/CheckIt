@@ -9,8 +9,6 @@ import axios from 'axios';
 import { doc, getDoc, setDoc } from 'firebase/firestore'; 
 import { db, auth } from './lib/firebase';
 
-/* Bug: After doing search query diff bus stops with similar names may open and all show the same results */
-
 export default function BusStop() {
 
     // State variables
