@@ -13,3 +13,11 @@ jest.mock('react-native-maps', () => {
         PROVIDER_GOOGLE: 'google',
     };
 });
+
+jest.mock('react-native-gesture-handler', () => {
+    const actual = jest.requireActual('react-native-gesture-handler');
+    return {
+      ...actual,
+      GestureHandlerRootView: jest.fn().mockImplementation(({ children }) => children),
+    };
+  });

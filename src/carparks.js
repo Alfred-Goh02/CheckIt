@@ -41,7 +41,7 @@ export default function Carpark() {
   );
 
   // Fetch data from carpark API
-  const fetchData = async () => {
+   const fetchData = async () => {
     try {
       let allCarParks = [];
       let skipValue = 0;
@@ -271,8 +271,16 @@ export default function Carpark() {
       <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.container}>
         <Header closeAllDropdowns={closeAllDropdowns} />
         <View style={styles.locationBox}>
-          <SearchBar value={searchQuery} onChangeText={handleSearchChange} />
-          <Pressable style={styles.loadNearbyButton} onPress={getLocation}>
+          <SearchBar 
+            value={searchQuery} 
+            onChangeText={handleSearchChange}
+            testID="search-bar" 
+          />
+          <Pressable 
+            style={styles.loadNearbyButton} 
+            onPress={getLocation}
+            testID="load-nearby-button"
+          >
             <Ionicons name="location-sharp" size={34} color="white" />
           </Pressable>
         </View>
@@ -281,15 +289,19 @@ export default function Carpark() {
           toggleFavourite={toggleFavourite}
           toggleDropdown={toggleDropdown}
           fetchData={fetchData}
+          testID="carpark-list"
         />
         {filteredCarParks.length > displayedCarParks.length && (
-          <Button title="Load More" onPress={handleLoadMore} />
+          <Button 
+            title="Load More" 
+            onPress={handleLoadMore}
+            testID="load-more-button"
+          />
         )}
       </LinearGradient>
     </ScrollView>
   );
 }
-
 
 // Header component
 const Header = ({ closeAllDropdowns }) => {
@@ -307,21 +319,28 @@ const Header = ({ closeAllDropdowns }) => {
 
   return (
     <View style={styles.header}>
-      <Pressable style={styles.backButton} onPress={handleBackPress}>
+      <Pressable 
+        style={styles.backButton} 
+        onPress={handleBackPress}
+        testID="back-button"
+      >
         <Ionicons name="arrow-back" size={28} color="white" />
       </Pressable>
-      <Text style={styles.headerText}>Car Parks</Text>
+      <Text style={styles.headerText} testID="header-text">Car Parks</Text>
       <Ionicons name="chevron-forward" size={28} color="white" />
-      <Pressable style={styles.favoritesButton} onPress={handleFavoritesPress}>
+      <Pressable 
+        style={styles.favoritesButton} 
+        onPress={handleFavoritesPress}
+        testID="favorites-button"
+      >
         <Ionicons name="heart" size={30} color="white" />
       </Pressable>
     </View>
   );
 };
 
-
 // List component to display car parks
-const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchData }) => {
+export const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchData }) => {
   // mapping lotTypes
   const lotTypeMapping = {
     C: 'Cars',
@@ -338,18 +357,30 @@ const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchData }) =
   }
 
   return (
-    <View>
+    <View testID="carpark-list">
       {carParks.map((carPark, index) => (
         <View key={index} style={styles.carParkWrapper}>
           <View style={styles.carParkContainer}>
-            <Pressable style={styles.iconButton} onPress={() => toggleFavourite(carPark.carparkName)}>
+            <Pressable 
+              style={styles.iconButton} 
+              onPress={() => toggleFavourite(carPark.carparkName)}
+              testID={`favourite-icon-${carPark.carparkName}`}
+            >
               <HeartIcon filled={carPark.isFavourite} />
             </Pressable>
-            <Pressable style={styles.carParkDetails} onPress={() => toggleDropdown(carPark.carparkName)}>
+            <Pressable 
+              style={styles.carParkDetails} 
+              onPress={() => toggleDropdown(carPark.carparkName)}
+              testID={`carpark-details-${carPark.carparkName}`}
+            >
               <Text style={styles.carParkNumber}>Carpark: {carPark.carparkName}</Text>
               <Text style={styles.shortName}>Area: {carPark.area}</Text>
             </Pressable>
-            <Pressable style={styles.iconButton} onPress={fetchData}>
+            <Pressable 
+              style={styles.iconButton} 
+              onPress={fetchData}
+              testID="refresh-button"
+            >
               <FontAwesome5 name="sync-alt" size={24} color="black" />
             </Pressable>
           </View>
@@ -368,7 +399,6 @@ const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchData }) =
     </View>
   );
 };
-
 
 // Heart icon component for favourites
 const HeartIcon = ({ filled }) => {
@@ -391,13 +421,14 @@ const HeartIcon = ({ filled }) => {
 };
 
 // Search bar component
-const SearchBar = ({ value, onChangeText }) => {
+ const SearchBar = ({ value, onChangeText }) => {
   return (
     <TextInput
       style={styles.searchBar}
       value={value}
       onChangeText={onChangeText}
       placeholder="Enter carpark name or code..."
+      testID="search-bar-input"
     />
   );
 };
