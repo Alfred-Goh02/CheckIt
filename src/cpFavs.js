@@ -59,34 +59,83 @@ export default function CPFavourites() {
 
   const fetchCarparkDetails = async (carparkName) => {
     try {
-      const response = await axios.get('http://datamall2.mytransport.sg/ltaodataservice/CarParkAvailabilityv2', {
-        headers: {
-          'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
-          'Accept': 'application/json',
-        },
-      });
-
-      const carparkData = response.data.value.find(carpark => carpark.Development === carparkName);
-
+      let allCarParks = [];
+      let skipValue = 0;
+      const batchSize = 500;
+      let toContinue = true;
+  
+      // Fetch all carparks
+      while (toContinue) {
+        const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/CarParkAvailabilityv2?$skip=${skipValue}`, {
+          headers: {
+            'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+            'Accept': 'application/json',
+          },
+        });
+  
+        const carparkData = response.data.value;
+  
+        if (carparkData.length > 0) {
+          allCarParks = allCarParks.concat(carparkData);
+          skipValue += batchSize;
+        } else {
+          toContinue = false;
+        }
+      }
+  
+      const dropdowns = await AsyncStorage.getItem('CPdropdowns');
+      const dropdownStates = dropdowns ? JSON.parse(dropdowns) : {};
+  
+      const user = auth.currentUser;
+      let favouriteCarParks = {};
+      if (user) {
+        const userId = user.uid;
+        const favouriteRef = doc(db, 'users', userId, 'favorites', 'carParks');
+        const docSnapshot = await getDoc(favouriteRef);
+        if (docSnapshot.exists()) {
+          favouriteCarParks = docSnapshot.data().favorites || {};
+        }
+      }
+  
+      // Find the specific carpark 
+      const carparkData = allCarParks.find(carpark => carpark.Development === carparkName);
+      
       if (carparkData) {
+        const vehicleTypeMapping = {
+          C: 'Cars',
+          H: 'Heavy Vehicles',
+          Y: 'Motorcycles',
+        };
+  
+        const vehicleTypeOrder = Object.keys(vehicleTypeMapping);
+  
+        // Create and sort vehicleTypes
+        const vehicleTypes = allCarParks
+          .filter(carpark => carpark.Development === carparkName)
+          .map(carpark => ({
+            lotType: carpark.LotType,
+            spacesAvailable: carpark.AvailableLots,
+          }))
+          .sort((a, b) => vehicleTypeOrder.indexOf(a.lotType) - vehicleTypeOrder.indexOf(b.lotType));
+  
         return {
+          carparkName: carparkData.Development,
           area: carparkData.Area || 'Others',
           carparkID: carparkData.CarParkID,
           location: carparkData.Location,
           agency: carparkData.Agency,
-          vehicleTypes: [{
-            lotType: carparkData.LotType,
-            spacesAvailable: carparkData.AvailableLots,
-          }],
+          vehicleTypes: vehicleTypes,
+          isFavourite: !!favouriteCarParks[carparkData.Development],
+          isOpen: !!dropdownStates[carparkData.Development],
         };
       }
-
+  
       return null;
     } catch (error) {
       console.error('Error fetching car park details:', error);
       return null;
     }
-  };
+  };  
 
   const saveDropdowns = async (updatedCarParks) => {
     const dropdowns = updatedCarParks.reduce((acc, carPark) => {

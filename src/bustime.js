@@ -1,13 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { Pressable, View, Text, StyleSheet, ScrollView, TextInput, ActivityIndicator, Button } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
 import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { doc, getDoc, setDoc } from 'firebase/firestore'; 
 import { db, auth } from './lib/firebase';
+
+export function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the Earth in km
+    const toRad = Math.PI / 180;
+    lat1 *= toRad;
+    lon1 *= toRad;
+    lat2 *= toRad;
+    lon2 *= toRad;
+    const distance = Math.acos(
+      Math.sin(lat1) * Math.sin(lat2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
+    ) * R;
+    return distance;
+}
 
 export default function BusStop() {
 
@@ -16,79 +31,117 @@ export default function BusStop() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [location, setLocation] = useState(null);
+    const [dropdownStates, setDropdownStates] = useState({});
     const busStopsPerPage = 10;
-    const navigation = useNavigation();
 
-    // Fetch data on component mount
     useEffect(() => {
-        fetchData();
-        const interval = setInterval(fetchData, 60000); // Fetch data every 60 seconds
-        const unsubscribe = navigation.addListener('focus', () => {
-            fetchData();
-        });
-
-        return () => {
-            clearInterval(interval); // Cleanup interval on unmount
-            unsubscribe(); // Cleanup the listener on unmount
-        };
-    }, [navigation]);
+        (async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status != 'granted') {
+                console.log("Permission Denied");
+                return;
+            }
+            let location = await Location.getCurrentPositionAsync();
+            setLocation({
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude
+            });
+        })();
+    }, []);
 
     // Fetch data from the Bus Stop API
     const fetchData = async () => {
         try {
-          let allBusStops = [];
-          let skipValue = 0;
-          const batchSize = 500;
-          let toContinue = true;
-      
-          while (toContinue) {
-            const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/BusStops?$skip=${skipValue}`, {
-              headers: {
-                'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
-                'Accept': 'application/json',
-              },
-            });
-      
-            const busStopData = response.data.value;
-      
-            if (busStopData.length > 0) {
-              allBusStops = allBusStops.concat(busStopData);
-              skipValue += batchSize;
-            } else {
-              toContinue = false;
+            let allBusStops = [];
+            let skipValue = 0;
+            const batchSize = 500;
+            let toContinue = true;
+
+            while (toContinue) {
+                const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/BusStops?$skip=${skipValue}`, {
+                    headers: {
+                        'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+                        'Accept': 'application/json',
+                    },
+                });
+
+                const busStopData = response.data.value;
+
+                if (busStopData.length > 0) {
+                    allBusStops = allBusStops.concat(busStopData);
+                    skipValue += batchSize;
+                } else {
+                    toContinue = false;
+                }
             }
-          }
-      
-          const dropdowns = await AsyncStorage.getItem('busStopDropdowns');
-          const dropdownStates = dropdowns ? JSON.parse(dropdowns) : {};
-      
-          // Fetch favorites from Firestore
-          const user = auth.currentUser;
-          let favouriteBusStops = {};
-          if (user) {
-            const userId = user.uid;
-            const favouriteRef = doc(db, 'users', userId, 'favorites', 'busStops');
-            const docSnapshot = await getDoc(favouriteRef);
-            if (docSnapshot.exists()) {
-              favouriteBusStops = docSnapshot.data().favorites || {};
+
+            const dropdowns = await AsyncStorage.getItem('busStopDropdowns');
+            const savedDropdownStates = dropdowns ? JSON.parse(dropdowns) : {};
+
+            // Fetch favorites from Firestore
+            const user = auth.currentUser;
+            let favouriteBusStops = {};
+            if (user) {
+                const userId = user.uid;
+                const favouriteRef = doc(db, 'users', userId, 'favorites', 'busStops');
+                const docSnapshot = await getDoc(favouriteRef);
+                if (docSnapshot.exists()) {
+                    favouriteBusStops = docSnapshot.data().favorites || {};
+                }
             }
-          }
-      
-          const formattedBusStops = allBusStops.map(stop => ({
-            name: stop.Description,
-            codeName: stop.BusStopCode,
-            roadName: stop.RoadName,
-            latitude: stop.Latitude,
-            longitude: stop.Longitude,
-            isFavourite: !!favouriteBusStops[stop.Description],
-            isOpen: !!dropdownStates[stop.Description],
-          }));
-      
-          setBusStops(formattedBusStops);
-          setLoading(false);
+
+            const formattedBusStops = allBusStops.map(stop => ({
+                name: stop.Description,
+                codeName: stop.BusStopCode,
+                roadName: stop.RoadName,
+                latitude: stop.Latitude,
+                longitude: stop.Longitude,
+                isFavourite: !!favouriteBusStops[stop.BusStopCode], 
+                isOpen: !!savedDropdownStates[stop.BusStopCode], 
+            }));
+
+            setDropdownStates(savedDropdownStates);
+            setBusStops(formattedBusStops);
+            setLoading(false);
         } catch (error) {
-          console.error('Error fetching bus stop info:', error);
-          setLoading(false);
+            console.error('Error fetching bus stop info:', error);
+            setLoading(false);
+        }
+    };
+
+    // Fetch data on component mount and set interval for auto-refresh
+    useEffect(() => {
+        fetchData();
+        const interval = setInterval(fetchData, 60000); // Fetch data every min
+
+        // Cleanup interval on unmount
+        return () => clearInterval(interval);
+    }, []);
+
+    // Ensure favourites are synced
+    useFocusEffect(
+        useCallback(() => {
+        fetchData();
+        }, [])
+    );
+
+    // Filter nearby bus stops
+    const filterNearbyBusStops = () => {
+        if (location) {
+            const nearbyBusStops = busStops.filter(stop => {
+                const distance = getDistanceFromLatLonInKm(
+                    location.latitude,
+                    location.longitude,
+                    stop.latitude,
+                    stop.longitude
+                );
+                return distance <= 2;
+            });
+            setBusStops(nearbyBusStops);
+        } else {
+            console.log('No location data available');
+            return;
         }
     };
 
@@ -150,39 +203,40 @@ export default function BusStop() {
     const saveDropdowns = async (updatedBusStops) => {
         const dropdowns = updatedBusStops.reduce((acc, busStop) => {
             if (busStop.isOpen) {
-                acc[busStop.name] = true;
+                acc[busStop.codeName] = true;
             }
             return acc;
         }, {});
-
+    
         await AsyncStorage.setItem('busStopDropdowns', JSON.stringify(dropdowns));
     };
 
     // Toggle favourite state of a bus stop
-    const toggleFavourite = async (name) => {
+    const toggleFavourite = async (codeName) => {
         const user = auth.currentUser;
         if (!user) {
-          console.error("User is not authenticated.");
-          return;
+            console.error("User is not authenticated.");
+            return;
         }
-    
+
         const userId = user.uid;
         const favouriteRef = doc(db, 'users', userId, 'favorites', 'busStops');
         const docSnapshot = await getDoc(favouriteRef);
-    
+
         let currentFavourites = {};
         if (docSnapshot.exists()) {
-          currentFavourites = docSnapshot.data().favorites || {};
+            currentFavourites = docSnapshot.data().favorites || {};
         }
-    
-        if (currentFavourites[name]) {
-          delete currentFavourites[name];
+
+        if (currentFavourites[codeName]) {
+            delete currentFavourites[codeName];
         } else {
-          currentFavourites[name] = true;
+            currentFavourites[codeName] = true;
         }
-    
-        // Save the updated favorites to Firestore
+
         await setDoc(favouriteRef, { favorites: currentFavourites });
+
+        console.log("Updated Favourites:", currentFavourites); // Debugging log
 
         setBusStops(prevBusStops => {
             if (!Array.isArray(prevBusStops)) {
@@ -190,8 +244,10 @@ export default function BusStop() {
             }
 
             const updatedBusStops = prevBusStops.map(busStop => {
-                if (busStop.name === name) {
-                    return { ...busStop, isFavourite: !busStop.isFavourite };
+                if (busStop.codeName === codeName) {
+                    const updatedBusStop = { ...busStop, isFavourite: !busStop.isFavourite };
+                    console.log("Toggled Bus Stop:", updatedBusStop); // Debugging log
+                    return updatedBusStop;
                 }
                 return busStop;
             });
@@ -199,13 +255,12 @@ export default function BusStop() {
             return updatedBusStops;
         });
     };
-    
 
     // Toggle dropdown state of a bus stop and fetch bus arrival details
-    const toggleDropdown = async (name, busStopCode) => {
+    const toggleDropdown = async (busStopCode) => {
         setBusStops(prevBusStops => {
             const updatedBusStops = prevBusStops.map(busStop => {
-                if (busStop.name === name) {
+                if (busStop.codeName === busStopCode) {
                     busStop.isOpen = !busStop.isOpen;
                     if (busStop.isOpen && !busStop.details) {
                         busStop.loadingDetails = true;
@@ -224,7 +279,7 @@ export default function BusStop() {
     
                 setBusStops(prevBusStops => {
                     const updatedBusStops = prevBusStops.map(busStop => {
-                        if (busStop.name === name) {
+                        if (busStop.codeName === busStopCode) {
                             return { ...busStop, details: data, loadingDetails: false };
                         }
                         return busStop;
@@ -236,12 +291,54 @@ export default function BusStop() {
                 console.error('Error fetching data for bus stop:', error);
                 setBusStops(prevBusStops => {
                     const updatedBusStops = prevBusStops.map(busStop => {
-                        if (busStop.name === name) {
+                        if (busStop.codeName === busStopCode) {
                             return { ...busStop, loadingDetails: false };
                         }
                         return busStop;
                     });
                     saveDropdowns(updatedBusStops); 
+                    return updatedBusStops;
+                });
+            }
+        }
+    };
+
+    // Function to refresh data
+    const refreshBusStop = async (busStopCode) => {
+        setBusStops(prevBusStops => {
+            const updatedBusStops = prevBusStops.map(busStop => {
+                if (busStop.codeName === busStopCode) {
+                    busStop.loadingDetails = true;
+                }
+                return busStop;
+            });
+            return updatedBusStops;
+        });
+
+        if (busStopCode) {
+            try {
+                const response = await fetchArrival(busStopCode);
+                const data = processBusStopDetails(response);
+
+                setBusStops(prevBusStops => {
+                    const updatedBusStops = prevBusStops.map(busStop => {
+                        if (busStop.codeName === busStopCode) {
+                            return { ...busStop, details: data, loadingDetails: false };
+                        }
+                        return busStop;
+                    });
+                    saveDropdowns(updatedBusStops); 
+                    return updatedBusStops;
+                });
+            } catch (error) {
+                console.error('Error fetching data for bus stop:', error);
+                setBusStops(prevBusStops => {
+                    const updatedBusStops = prevBusStops.map(busStop => {
+                        if (busStop.codeName === busStopCode) {
+                            return { ...busStop, loadingDetails: false };
+                        }
+                        return busStop;
+                    });
                     return updatedBusStops;
                 });
             }
@@ -293,11 +390,17 @@ export default function BusStop() {
             <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.container}>
     
                 <Header closeAllDropdowns={closeAllDropdowns} />
-                <SearchBar value={searchQuery} onChangeText={handleSearchChange} />
+                <View style={styles.locationBox}>
+                    <SearchBar value={searchQuery} onChangeText={handleSearchChange} />
+                    <Pressable style={styles.loadNearbyButton} onPress={filterNearbyBusStops}>
+                        <Ionicons name="location-sharp" size={34} color="white" />
+                    </Pressable>
+                </View>
                 <BusStopList
                     busStops={displayedBusStops}
                     toggleFavourite={toggleFavourite}
                     toggleDropdown={toggleDropdown}
+                    refreshBusStop={refreshBusStop}
                 />
                 {filteredBusStops.length > displayedBusStops.length && (
                     <Button title="Load More" onPress={handleLoadMore} />
@@ -306,6 +409,7 @@ export default function BusStop() {
         </ScrollView>
     );
 };
+
 // Sort Bus Service Numbers in alphabumerical order
 const sortBusServices = (services) => {
     return services.sort((a, b) => {
@@ -319,7 +423,6 @@ const sortBusServices = (services) => {
         return parseInt(numA) - parseInt(numB);
     });
 };
-
 
 // Header component
 const Header = ({ closeAllDropdowns }) => {
@@ -350,50 +453,53 @@ const Header = ({ closeAllDropdowns }) => {
     );
 };
 
-const BusStopList = ({ busStops, toggleFavourite, toggleDropdown }) => {
-    if (busStops.length === 0) {
-        return (
-            <View style={styles.noResults}>
-                <Text style={styles.noResultsText}>No Bus Stops found</Text>
-            </View>
-        );
-    }
-
+const BusStopList = ({ busStops, toggleFavourite, toggleDropdown, refreshBusStop }) => {
+  if (busStops.length === 0) {
     return (
-        <View>
-            {busStops.map((busStop, index) => (
-                <View key={index} style={styles.busStopWrapper}>
-                    <View style={styles.busStopContainer}>
-                        <Pressable style={styles.iconButton} onPress={() => toggleFavourite(busStop.name)}>
-                            <HeartIcon filled={busStop.isFavourite} />
-                        </Pressable>
-                        <Pressable style={styles.busStopDetails} onPress={() => toggleDropdown(busStop.name, busStop.codeName)}>
-                            <View style={styles.busStopRow}>
-                                <Text style={styles.busStopName}>{busStop.name}</Text>
-                                <Text style={styles.busStopRoadName}>{busStop.roadName}</Text>
-                            </View>
-                        </Pressable>
-                        <Pressable style={styles.iconButton} onPress={() => toggleDropdown(busStop.name, busStop.codeName)}>
-                            <Text style={styles.busStopCodeName}>{busStop.codeName}</Text>
-                            <FontAwesome5 name="sync-alt" size={24} color="black" style={{ marginLeft: 10 }} />
-                        </Pressable>
-                    </View>
-                    {busStop.isOpen && !busStop.loadingDetails && busStop.details && busStop.details.length > 0 && (
-                        <View style={styles.dropdownContent}>
-                            {busStop.details.map((service, idx) => (
-                                <ServiceDetails key={idx} service={service} />
-                            ))}
-                        </View>
-                    )}
-                    {busStop.loadingDetails && (
-                        <View style={styles.dropdownContent}>
-                            <ActivityIndicator size="small" color="#0000ff" />
-                        </View>
-                    )}
-                </View>
-            ))}
-        </View>
+      <View style={styles.noResults}>
+        <Text style={styles.noResultsText}>No Bus Stops found</Text>
+      </View>
     );
+  }
+
+  return (
+    <View>
+      {busStops.map((busStop, index) => (
+        <View key={index} style={styles.busStopWrapper}>
+          <View style={styles.busStopContainer}>
+            <Pressable style={styles.iconButton} onPress={() => toggleFavourite(busStop.codeName)}>
+              <HeartIcon filled={busStop.isFavourite} />
+            </Pressable>
+            <Pressable style={styles.busStopDetails} onPress={() => toggleDropdown(busStop.codeName)}>
+              <View style={styles.busStopRow}>
+                <Text style={styles.busStopName}>{busStop.name}</Text>
+                <Text style={styles.busStopRoadName}>{busStop.roadName}</Text>
+              </View>
+            </Pressable>
+            <Pressable style={styles.iconButton} onPress={() => refreshBusStop(busStop.codeName)}>
+              <Text style={styles.busStopCodeName}>{busStop.codeName}</Text>
+              <FontAwesome5 name="sync-alt" size={24} color="black" style={{ marginLeft: 10 }} />
+            </Pressable>
+          </View>
+          {busStop.isOpen && (
+            <View style={styles.dropdownContent}>
+              {busStop.loadingDetails ? (
+                <ActivityIndicator size="small" color="#0000ff" />
+              ) : (
+                busStop.details && busStop.details.length > 0 ? (
+                  busStop.details.map((service, idx) => (
+                    <ServiceDetails key={idx} service={service} />
+                  ))
+                ) : (
+                  <Text style={{fontSize: 16}}>No service available</Text>
+                )
+              )}
+            </View>
+          )}
+        </View>
+      ))}
+    </View>
+  );
 };
 
 const ServiceDetails = ({ service }) => {
@@ -564,10 +670,15 @@ const styles = StyleSheet.create({
     searchBar: {
         backgroundColor: '#FFFFF0',
         padding: 10,
-        marginBottom: 12,
         borderRadius: 30,
         fontSize: 16,
-    },
+        flex: 1,
+      },
+      locationBox: {
+        flexDirection: 'row',
+        alignItems: 'center', 
+        marginBottom: 12,
+      },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -633,4 +744,11 @@ const styles = StyleSheet.create({
         fontSize: 10,
         flexDirection: 'column'
     },
+    loadNearbyButton: {
+        padding: 10,
+        borderRadius: 30,
+        backgroundColor: '#4682B4',
+        marginLeft: 8, 
+        flexShrink: 0,
+      },
 });

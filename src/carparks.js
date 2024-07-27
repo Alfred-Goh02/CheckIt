@@ -47,7 +47,8 @@ export default function Carpark() {
       let skipValue = 0;
       const batchSize = 500;
       let toContinue = true;
-
+  
+      // Fetch all carparks
       while (toContinue) {
         const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/CarParkAvailabilityv2?$skip=${skipValue}`, {
           headers: {
@@ -55,9 +56,9 @@ export default function Carpark() {
             'Accept': 'application/json',
           },
         });
-
+  
         const carparkData = response.data.value;
-
+  
         if (carparkData.length > 0) {
           allCarParks = allCarParks.concat(carparkData);
           skipValue += batchSize;
@@ -65,10 +66,10 @@ export default function Carpark() {
           toContinue = false;
         }
       }
-
+  
       const dropdowns = await AsyncStorage.getItem('CPdropdowns');
       const dropdownStates = dropdowns ? JSON.parse(dropdowns) : {};
-
+  
       // Fetch favorites from Firestore
       const user = auth.currentUser;
       let favouriteCarParks = {};
@@ -80,13 +81,22 @@ export default function Carpark() {
           favouriteCarParks = docSnapshot.data().favorites || {};
         }
       }
-
+  
+      // Define vehicle type order
+      const vehicleTypeMapping = {
+        C: 'Cars',
+        H: 'Heavy Vehicles',
+        Y: 'Motorcycles',
+      };
+  
+      const vehicleTypeOrder = Object.keys(vehicleTypeMapping);
+  
       // Consolidate carparks by name
       const carparkMap = {};
-
+  
       allCarParks.forEach(carpark => {
         const name = carpark.Development;
-
+  
         if (!carparkMap[name]) {
           carparkMap[name] = {
             carparkName: name,
@@ -99,15 +109,21 @@ export default function Carpark() {
             isOpen: !!dropdownStates[name],
           };
         }
-
+  
         carparkMap[name].vehicleTypes.push({
           lotType: carpark.LotType,
           spacesAvailable: carpark.AvailableLots,
         });
       });
-
-      const formattedCarParks = Object.values(carparkMap);
-
+  
+      // Sort vehicleTypes for each carpark entry
+      const formattedCarParks = Object.values(carparkMap).map(carpark => ({
+        ...carpark,
+        vehicleTypes: carpark.vehicleTypes.sort((a, b) => 
+          vehicleTypeOrder.indexOf(a.lotType) - vehicleTypeOrder.indexOf(b.lotType)
+        ),
+      }));
+  
       setCarParks(formattedCarParks);
       setLoading(false);
     } catch (error) {
@@ -115,6 +131,7 @@ export default function Carpark() {
       setLoading(false);
     }
   };
+  
 
   // Get user's current location
   const getLocation = async () => {
@@ -141,13 +158,13 @@ export default function Carpark() {
     const filteredCarParks = carParks.filter(carpark => {
       const [carparkLat, carparkLon] = carpark.location.split(' ').map(Number);
       const distance = getDistance(latitude, longitude, carparkLat, carparkLon);
-      return distance <= 5000; // Filter carparks within 5km radius
+      return distance <= 5; // Filter carparks within 5km radius
     });
 
     setCarParks(filteredCarParks);
   };
 
-  // Calculate distance
+  // Calculate distance in km
   const getDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371; // Radius of the Earth in km
     const toRad = Math.PI / 180;
