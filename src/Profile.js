@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
+import { StyleSheet, View, TouchableOpacity, Text, ScrollView } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Ionicons } from '@expo/vector-icons';
 import MaterialIconTextbox from "./components/MaterialIconTextbox";
@@ -45,8 +45,8 @@ const Profile = ({ navigation, route }) => {
   const updateUserProfile = async () => {
     try {
       const auth = getAuth();
-      const user = auth.currentUser; // Use await here
-      const Username =  await AsyncStorage.getItem('username');
+      const user = auth.currentUser;
+      const Username = await AsyncStorage.getItem('username');
       const Contact = await AsyncStorage.getItem('contact');
       const Gender = await AsyncStorage.getItem('gender');
       if (user) {
@@ -68,31 +68,33 @@ const Profile = ({ navigation, route }) => {
       alert('Failed to update profile. Please try again.');
     }
   };
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <Header/>
       <Icon name="person" style={styles.icon} />
-      <View style={styles.rect2}>
-        <View style={styles.rect3} />
-        <View style={styles.materialIconTextboxStack}>
-          <MaterialIconTextbox style={styles.materialIconTextbox} />
-          <MaterialIconTextbox1 style={styles.materialIconTextbox13} email={email}/>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.rect2}>
+          <View style={styles.rect3} />
+          <View style={styles.materialIconTextboxStack}>
+            <MaterialIconTextbox style={styles.materialIconTextbox} />
+            <MaterialIconTextbox1 style={styles.materialIconTextbox13} email={email}/>
+          </View>
+          <View style={styles.rect4} />
+          <View style={styles.rect5} />
+          <MaterialIconTextbox2 style={styles.materialIconTextbox2} password={password}/>
+          <View style={styles.rect6} />
+          <View style={styles.materialIconTextbox3Stack}>
+            <MaterialIconTextbox3 style={styles.materialIconTextbox3} />
+            <MaterialIconTextbox4 style={styles.materialIconTextbox4} />
+          </View>
+          <View style={styles.rect7} />
+          <View style={styles.rect8} />
         </View>
-        <View style={styles.rect4} />
-        <View style={styles.rect5} />
-        <MaterialIconTextbox2 style={styles.materialIconTextbox2} password={password}/>
-        <View style={styles.rect6} />
-        <View style={styles.materialIconTextbox3Stack}>
-          <MaterialIconTextbox3 style={styles.materialIconTextbox3} />
-          <MaterialIconTextbox4 style={styles.materialIconTextbox4} />
-        </View>
-        <View style={styles.rect7} />
-        <View style={styles.rect8} />
-      </View>
-      <TouchableOpacity onPress={updateUserProfile} style={styles.button}>
-        <Text style={styles.saveChanges}>Save Changes</Text>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={updateUserProfile} style={styles.button}>
+          <Text style={styles.saveChanges}>Save Changes</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -101,7 +103,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "rgba(255,255,255,1)",
-    alignItems: "center",
   },
   header: {
     backgroundColor: '#4682B4',
@@ -121,13 +122,17 @@ const styles = StyleSheet.create({
   icon: {
     position: "absolute",
     top: 100,
+    marginLeft:150,
     color: "rgba(74,144,226,1)",
     fontSize: 90,
+  },
+  scrollContainer: {
+    alignItems: "center",
+    paddingBottom: 20,
   },
   rect2: {
     marginTop: 220,
     width: "100%",
-    height: 340,
     backgroundColor: "white",
     alignItems: "center",
   },
@@ -201,19 +206,18 @@ const styles = StyleSheet.create({
     bottom: 20,
     height: 63,
     width: "80%",
-    position: "absolute",
     backgroundColor: "rgba(70,130,180,1)",
     borderWidth: 0,
     borderColor: "#000000",
     borderRadius: 100,
     justifyContent: "center",
     alignItems: "center",
+    marginTop:30
   },
   saveChanges: {
     color: "rgba(255,255,255,1)",
     fontSize: 20,
     fontWeight: "bold",
-    position: "absolute"
   },
 });
 
