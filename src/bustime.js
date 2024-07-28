@@ -113,7 +113,7 @@ export default function BusStop() {
     // Fetch data on component mount and set interval for auto-refresh
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 60000); // Fetch data every min
+        const interval = setInterval(refreshBusStop, 10000); // Fetch data every 10 secs
 
         // Cleanup interval on unmount
         return () => clearInterval(interval);

@@ -17,6 +17,10 @@ const BusFavourites = () => {
 
     useEffect(() => {
         fetchFavourites();
+        const interval = setInterval(refreshBusStop, 10000); // Fetch data every 10 secs
+
+        // Cleanup interval on unmount
+        return () => clearInterval(interval);
     }, []);
 
     const fetchFavourites = async () => {

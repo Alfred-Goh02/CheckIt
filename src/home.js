@@ -85,32 +85,27 @@ const Welcomeuser = ({ navigation }) => {
 
 const Icons = ({ navigation }) => (
   <View style={styles.iconsContainer}>
-    <View style={styles.iconWrapper}>
-      <Pressable onPress={() => navigation.navigate("Carpark")}>
+    <Pressable style={styles.iconWrapper} onPress={() => navigation.navigate("Carpark")}>
       <View style={styles.iconTextContainer}>
-          <FontAwesome name="car" size={50} color="white" />
-          <Text style={styles.iconText}>Parking Availability</Text>
-        </View>
-      </Pressable>
-    </View>
-    <View style={styles.iconWrapper}>
-      <Pressable onPress={() => navigation.navigate("BusTime")}>
+        <FontAwesome name="car" size={50} color="white" />
+        <Text style={styles.iconText}>Parking Availability</Text>
+      </View>
+    </Pressable>
+    <Pressable style={styles.iconWrapper} onPress={() => navigation.navigate("BusTime")}>
       <View style={styles.iconTextContainer}>
-          <FontAwesome5 name="bus" size={50} color="white" />
-          <Text style={styles.iconText}>Bus Stops</Text>
-        </View>
-      </Pressable>
-    </View>
-    <View style={styles.iconWrapper}>
-      <Pressable onPress={() => navigation.navigate("Taxi")}>
+        <FontAwesome5 name="bus" size={50} color="white" />
+        <Text style={styles.iconText}>Bus Stops</Text>
+      </View>
+    </Pressable>
+    <Pressable style={styles.iconWrapper} onPress={() => navigation.navigate("Taxi")}>
       <View style={styles.iconTextContainer}>
-          <FontAwesome5 name="taxi" size={50} color="white" />
-          <Text style={styles.iconText}>Taxi</Text>
-        </View>
-      </Pressable>
-    </View>
+        <FontAwesome5 name="taxi" size={50} color="white" />
+        <Text style={styles.iconText}>Taxi</Text>
+      </View>
+    </Pressable>
   </View>
 );
+
 
 const BtmIcons = ({ navigation }) => (
   <View style={styles.btmIconsContainer}>
