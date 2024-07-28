@@ -13,7 +13,7 @@ const BusFavourites = () => {
     const [loading, setLoading] = useState(true);
     const [busStops, setBusStops] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const busStopsPerPage = 10;
+    const busStopsPerPage = 50;
 
     useEffect(() => {
         fetchFavourites();
