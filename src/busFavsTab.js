@@ -9,6 +9,7 @@ import { db, auth } from './lib/firebase';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 
+
 const BusFavouritesTab = () => {
     const [loading, setLoading] = useState(true);
     const [busStops, setBusStops] = useState([]);
@@ -68,9 +69,9 @@ const BusFavouritesTab = () => {
     
         while (hasMoreData) {
             try {
-                const response = await axios.get('http://datamall2.mytransport.sg/ltaodataservice/BusStops', {
+                const response = await axios.get(`${process.env.REACT_APP_BUSSTOP_API_URL}`, {
                     headers: {
-                        'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+                        'AccountKey': process.env.REACT_APP_ACC_KEY,
                         'Accept': 'application/json',
                     },
                     params: {
@@ -117,12 +118,12 @@ const BusFavouritesTab = () => {
 
     const fetchArrival = async (busStopCode) => {
         try {
-            const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2`, {
+            const response = await axios.get(`${process.env.REACT_APP_BUSARRIVAL_API_URL}`, {
                 params: {
                     BusStopCode: busStopCode,
                 },
                 headers: {
-                    'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+                    'AccountKey': process.env.REACT_APP_ACC_KEY,
                     'Accept': 'application/json',
                 },
             });

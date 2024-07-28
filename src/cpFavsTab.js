@@ -64,9 +64,9 @@ export default function CPFavouritesTab() {
   
       // Fetch all carparks
       while (toContinue) {
-        const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/CarParkAvailabilityv2?$skip=${skipValue}`, {
+        const response = await axios.get(`${process.env.REACT_APP_CARPARK_API_URL}?$skip=${skipValue}`, {
           headers: {
-            'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+            'AccountKey': process.env.REACT_APP_ACC_KEY,
             'Accept': 'application/json',
           },
         });

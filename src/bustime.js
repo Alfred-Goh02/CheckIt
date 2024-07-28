@@ -1,3 +1,4 @@
+import { REACT_APP_ACC_KEY, REACT_APP_BUSSTOP_API_URL, REACT_APP_BUSARRIVAL_API_URL } from '@env';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
@@ -9,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { doc, getDoc, setDoc } from 'firebase/firestore'; 
 import { db, auth } from './lib/firebase';
+
 
 export function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     const R = 6371; // Radius of the Earth in km
@@ -59,9 +61,9 @@ export default function BusStop() {
             let toContinue = true;
 
             while (toContinue) {
-                const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/BusStops?$skip=${skipValue}`, {
+                const response = await axios.get(`${REACT_APP_BUSSTOP_API_URL}?$skip=${skipValue}`, {
                     headers: {
-                        'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+                        'AccountKey': REACT_APP_ACC_KEY,
                         'Accept': 'application/json',
                     },
                 });
@@ -106,6 +108,7 @@ export default function BusStop() {
             setLoading(false);
         } catch (error) {
             console.error('Error fetching bus stop info:', error);
+
             setLoading(false);
         }
     };
@@ -148,12 +151,12 @@ export default function BusStop() {
     // Fetch data from the bus arrival API
     const fetchArrival = async (busStopCode) => {
         try {
-            const response = await axios.get(`http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2`, {
+            const response = await axios.get(`${REACT_APP_BUSARRIVAL_API_URL}`, {
                 params: {
                     BusStopCode: busStopCode,
                 },
                 headers: {
-                    'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+                    'AccountKey': REACT_APP_ACC_KEY,
                     'Accept': 'application/json',
                 },
             });

@@ -53,9 +53,9 @@ export default function Taxi({ navigation }) {
         let config = {
           method: 'get',
           maxBodyLength: Infinity,
-          url: 'http://datamall2.mytransport.sg/ltaodataservice/Taxi-Availability',
+          url: `${process.env.REACT_APP_TAXI_API_URL}`,
           headers: {
-            'AccountKey': 'X0n+k8P5S5u2bnIoUx6pKw==',
+            'AccountKey': process.env.REACT_APP_ACC_KEY,
             'accept': 'application/json'
           }
         };
@@ -71,9 +71,9 @@ export default function Taxi({ navigation }) {
         let config = {
           method: 'get',
           maxBodyLength: Infinity,
-          url: 'http://datamall2.mytransport.sg/ltaodataservice/TaxiStands',
+          url: `${process.env.REACT_APP_TAXISTAND_API_URL}`,
           headers: {
-            'AccountKey': 'wQRr38EdTU+b5QZjVHu+Rw==',
+            'AccountKey': process.env.REACT_APP_TAXISTAND_ACC_KEY,
             'accept': 'application/json'
           }
         };
