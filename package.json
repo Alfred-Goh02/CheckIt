@@ -18,6 +18,7 @@
     "@react-navigation/bottom-tabs": "^6.6.0",
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",
+    "@react-navigation/stack": "^6.4.1",
     "async-storage": "^0.1.0",
     "axios": "^1.7.2",
     "babel-plugin-inline-dotenv": "^1.7.0",
@@ -35,6 +36,7 @@
     "react-native": "^0.74.2",
     "react-native-async-storage": "^0.0.1",
     "react-native-geolocation-service": "^5.3.1",
+    "react-native-gesture-handler": "^2.17.1",
     "react-native-maps": "^1.14.0",
     "react-native-pager-view": "^6.3.3",
     "react-native-paper": "^5.12.3",
@@ -47,10 +49,14 @@
     "use-latest-callback": "^0.1.9"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0",
+    "@babel/core": "^7.24.9",
+    "@babel/preset-env": "^7.24.8",
     "@testing-library/react-native": "^12.5.1",
+    "axios-mock-adapter": "^1.22.0",
+    "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
     "jest-expo": "^51.0.3",
+    "metro-react-native-babel-preset": "^0.77.0",
     "react-native-dotenv": "^3.4.11",
     "react-native-svg-transformer": "^1.4.0",
     "react-test-renderer": "^18.2.0"
@@ -58,7 +64,29 @@
   "jest": {
     "preset": "jest-expo",
     "setupFiles": [
-      "<rootDir>/src/tests/jestSetup.js"
+      "<rootDir>/src/tests/mocks/jestSetup.js",
+      "<rootDir>/src/lib/firebase.js",
+      "<rootDir>/src/tests/mocks/axiosSetup.js",
+      "<rootDir>/src/tests/mocks/gestureSetup.js"
+    ],
+    "moduleFileExtensions": [
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ],
+    "moduleNameMapper": {
+      "^firebase/app$": "<rootDir>/src/tests/mocks/firebasemock.js",
+      "^firebase/auth$": "<rootDir>/src/tests/mocks/firebasemock.js",
+      "^firebase/firestore": "<rootDir>/src/tests/mocks/firebasemock.js",
+      "^@react-native-async-storage/async-storage$": "<rootDir>/src/tests/mocks/asyncstoragemock.js"
+    },
+    "testEnvironment": "jsdom",
+    "transform": {
+      "^.+\\.(js|jsx|ts|tsx)$": "babel-jest"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(jest-)?react-native|@react-native|react-native|react-navigation|@react-navigation/.*|@unimodules|unimodules-.*|sentry-expo|native-base|expo(nent)?|@expo(nent)?|@expo-google-fonts|firebase|@firebase|@react-native-async-storage/async-storage|react-native-elements|react-native-calendars|react-native-modal-datetime-picker|@react-native-community/datetimepicker|react-native-gesture-handler)"
     ]
   },
   "private": true
