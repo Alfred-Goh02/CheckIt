@@ -1,4 +1,3 @@
-import { REACT_APP_ACC_KEY, REACT_APP_BUSSTOP_API_URL, REACT_APP_BUSARRIVAL_API_URL } from '@env';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
@@ -8,9 +7,8 @@ import * as Location from 'expo-location';
 import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { doc, getDoc, setDoc } from 'firebase/firestore'; 
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from './lib/firebase';
-
 
 export function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     const R = 6371; // Radius of the Earth in km
@@ -20,8 +18,8 @@ export function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     lat2 *= toRad;
     lon2 *= toRad;
     const distance = Math.acos(
-      Math.sin(lat1) * Math.sin(lat2) +
-      Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
+        Math.sin(lat1) * Math.sin(lat2) +
+        Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1)
     ) * R;
     return distance;
 }
@@ -61,9 +59,9 @@ export default function BusStop() {
             let toContinue = true;
 
             while (toContinue) {
-                const response = await axios.get(`${REACT_APP_BUSSTOP_API_URL}?$skip=${skipValue}`, {
+                const response = await axios.get(`${process.env.REACT_APP_BUSSTOP_API_URL}?$skip=${skipValue}`, {
                     headers: {
-                        'AccountKey': REACT_APP_ACC_KEY,
+                        'AccountKey': process.env.REACT_APP_ACC_KEY,
                         'Accept': 'application/json',
                     },
                 });
@@ -99,8 +97,8 @@ export default function BusStop() {
                 roadName: stop.RoadName,
                 latitude: stop.Latitude,
                 longitude: stop.Longitude,
-                isFavourite: !!favouriteBusStops[stop.BusStopCode], 
-                isOpen: !!savedDropdownStates[stop.BusStopCode], 
+                isFavourite: !!favouriteBusStops[stop.BusStopCode],
+                isOpen: !!savedDropdownStates[stop.BusStopCode],
             }));
 
             setDropdownStates(savedDropdownStates);
@@ -108,7 +106,6 @@ export default function BusStop() {
             setLoading(false);
         } catch (error) {
             console.error('Error fetching bus stop info:', error);
-
             setLoading(false);
         }
     };
@@ -125,38 +122,41 @@ export default function BusStop() {
     // Ensure favourites are synced
     useFocusEffect(
         useCallback(() => {
-        fetchData();
+            fetchData();
         }, [])
     );
 
     // Filter nearby bus stops
     const filterNearbyBusStops = () => {
         if (location) {
-            const nearbyBusStops = busStops.filter(stop => {
-                const distance = getDistanceFromLatLonInKm(
-                    location.latitude,
-                    location.longitude,
-                    stop.latitude,
-                    stop.longitude
-                );
-                return distance <= 2;
-            });
+            const nearbyBusStops = busStops
+                .map(stop => {
+                    const distance = getDistanceFromLatLonInKm(
+                        location.latitude,
+                        location.longitude,
+                        stop.latitude,
+                        stop.longitude
+                    );
+                    return { ...stop, distance };
+                })
+                .filter(stop => stop.distance <= 1)
+                .sort((a, b) => a.distance - b.distance);
+
             setBusStops(nearbyBusStops);
         } else {
             console.log('No location data available');
-            return;
         }
     };
 
     // Fetch data from the bus arrival API
     const fetchArrival = async (busStopCode) => {
         try {
-            const response = await axios.get(`${REACT_APP_BUSARRIVAL_API_URL}`, {
+            const response = await axios.get(`${process.env.REACT_APP_BUSARRIVAL_API_URL}`, {
                 params: {
                     BusStopCode: busStopCode,
                 },
                 headers: {
-                    'AccountKey': REACT_APP_ACC_KEY,
+                    'AccountKey': process.env.REACT_APP_ACC_KEY,
                     'Accept': 'application/json',
                 },
             });
@@ -210,7 +210,7 @@ export default function BusStop() {
             }
             return acc;
         }, {});
-    
+
         await AsyncStorage.setItem('busStopDropdowns', JSON.stringify(dropdowns));
     };
 
@@ -271,15 +271,15 @@ export default function BusStop() {
                 }
                 return busStop;
             });
-            saveDropdowns(updatedBusStops); 
+            saveDropdowns(updatedBusStops);
             return updatedBusStops;
         });
-    
+
         if (busStopCode) {
             try {
                 const response = await fetchArrival(busStopCode);
                 const data = processBusStopDetails(response);
-    
+
                 setBusStops(prevBusStops => {
                     const updatedBusStops = prevBusStops.map(busStop => {
                         if (busStop.codeName === busStopCode) {
@@ -287,7 +287,7 @@ export default function BusStop() {
                         }
                         return busStop;
                     });
-                    saveDropdowns(updatedBusStops); 
+                    saveDropdowns(updatedBusStops);
                     return updatedBusStops;
                 });
             } catch (error) {
@@ -299,7 +299,7 @@ export default function BusStop() {
                         }
                         return busStop;
                     });
-                    saveDropdowns(updatedBusStops); 
+                    saveDropdowns(updatedBusStops);
                     return updatedBusStops;
                 });
             }
@@ -330,7 +330,7 @@ export default function BusStop() {
                         }
                         return busStop;
                     });
-                    saveDropdowns(updatedBusStops); 
+                    saveDropdowns(updatedBusStops);
                     return updatedBusStops;
                 });
             } catch (error) {
@@ -391,7 +391,7 @@ export default function BusStop() {
     return (
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
             <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.container}>
-    
+
                 <Header closeAllDropdowns={closeAllDropdowns} />
                 <View style={styles.locationBox}>
                     <SearchBar value={searchQuery} onChangeText={handleSearchChange} />
@@ -457,53 +457,50 @@ const Header = ({ closeAllDropdowns }) => {
 };
 
 const BusStopList = ({ busStops, toggleFavourite, toggleDropdown, refreshBusStop }) => {
-  if (busStops.length === 0) {
-    return (
-      <View style={styles.noResults}>
-        <Text style={styles.noResultsText}>No Bus Stops found</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View>
-      {busStops.map((busStop, index) => (
-        <View key={index} style={styles.busStopWrapper}>
-          <View style={styles.busStopContainer}>
-            <Pressable style={styles.iconButton} onPress={() => toggleFavourite(busStop.codeName)}>
-              <HeartIcon filled={busStop.isFavourite} />
-            </Pressable>
-            <Pressable style={styles.busStopDetails} onPress={() => toggleDropdown(busStop.codeName)}>
-              <View style={styles.busStopRow}>
-                <Text style={styles.busStopName}>{busStop.name}</Text>
-                <Text style={styles.busStopRoadName}>{busStop.roadName}</Text>
-              </View>
-            </Pressable>
-            <Pressable style={styles.iconButton} onPress={() => refreshBusStop(busStop.codeName)}>
-              <Text style={styles.busStopCodeName}>{busStop.codeName}</Text>
-              <FontAwesome5 name="sync-alt" size={24} color="black" style={{ marginLeft: 10 }} />
-            </Pressable>
-          </View>
-          {busStop.isOpen && (
-            <View style={styles.dropdownContent}>
-              {busStop.loadingDetails ? (
-                <ActivityIndicator size="small" color="#0000ff" />
-              ) : (
-                busStop.details && busStop.details.length > 0 ? (
-                  busStop.details.map((service, idx) => (
-                    <ServiceDetails key={idx} service={service} />
-                  ))
-                ) : (
-                  <Text style={{fontSize: 16}}>No service available</Text>
-                )
-              )}
+    if (busStops.length === 0) {
+        return (
+            <View style={styles.noResults}>
+                <Text style={styles.noResultsText}>No Bus Stops found</Text>
             </View>
-          )}
+        );
+    }
+
+    return (
+        <View>
+            {busStops.map((busStop, index) => (
+                <View key={index} style={styles.busStopWrapper}>
+                    <View style={styles.busStopContainer}>
+                        <Pressable style={styles.iconButton} onPress={() => toggleFavourite(busStop.codeName)}>
+                            <HeartIcon filled={busStop.isFavourite} />
+                        </Pressable>
+                        <Pressable style={styles.busStopDetails} onPress={() => toggleDropdown(busStop.codeName)}>
+                            <View style={styles.busStopRow}>
+                                <Text style={styles.busStopName}>{busStop.name}</Text>
+                                <Text style={styles.busStopRoadName}>{busStop.roadName}</Text>
+                            </View>
+                        </Pressable>
+                        <Pressable style={styles.iconButton} onPress={() => refreshBusStop(busStop.codeName)}>
+                            <Text style={styles.busStopCodeName}>{busStop.codeName}</Text>
+                            <FontAwesome5 name="sync-alt" size={24} color="black" style={{ marginLeft: 10 }} />
+                        </Pressable>
+                    </View>
+                    {busStop.isOpen && busStop.details && busStop.details.length > 0 && (
+                        <View style={styles.dropdownContent}>
+                            {busStop.loadingDetails ? (
+                                <ActivityIndicator size="small" color="#0000ff" />
+                            ) : (
+                                busStop.details.map((service, idx) => (
+                                    <ServiceDetails key={idx} service={service} />
+                                ))
+                            )}
+                        </View>
+                    )}
+                </View>
+            ))}
         </View>
-      ))}
-    </View>
-  );
+    );
 };
+
 
 const ServiceDetails = ({ service }) => {
     // Function to calculate minutes remaining for bus arrival
@@ -517,14 +514,14 @@ const ServiceDetails = ({ service }) => {
 
     // Function to determine text color based on load
     const getTextColor = (load) => {
-      //  console.log('Load value:', load); 
+        //  console.log('Load value:', load); 
         switch (load) {
             case 'SEA':
-                return '#32CD32'; 
+                return '#32CD32';
             case 'SDA':
-                return 'orange'; 
+                return 'orange';
             case 'LSD':
-                return 'red'; 
+                return 'red';
             default:
                 return 'black'; // if load status is unknown
         }
@@ -532,7 +529,7 @@ const ServiceDetails = ({ service }) => {
 
     // Check for wheelchair access
     const hasWAB = (feature) => {
-        return feature === 'WAB'; 
+        return feature === 'WAB';
     };
 
     // Check Vehicle Type
@@ -631,8 +628,8 @@ const styles = StyleSheet.create({
         color: '#FFFFF0',
         fontSize: 24,
         fontWeight: 'bold',
-        flex: 1, 
-        textAlign: 'center', 
+        flex: 1,
+        textAlign: 'center',
     },
     busStopWrapper: {
         marginBottom: 16,
@@ -676,12 +673,12 @@ const styles = StyleSheet.create({
         borderRadius: 30,
         fontSize: 16,
         flex: 1,
-      },
-      locationBox: {
+    },
+    locationBox: {
         flexDirection: 'row',
-        alignItems: 'center', 
+        alignItems: 'center',
         marginBottom: 12,
-      },
+    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -751,7 +748,7 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 30,
         backgroundColor: '#4682B4',
-        marginLeft: 8, 
+        marginLeft: 8,
         flexShrink: 0,
-      },
+    },
 });

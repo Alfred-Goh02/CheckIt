@@ -63,7 +63,7 @@ export default function CPFavourites() {
       let skipValue = 0;
       const batchSize = 500;
       let toContinue = true;
-  
+
       // Fetch all carparks
       while (toContinue) {
         const response = await axios.get(`${process.env.REACT_APP_CARPARK_API_URL}?$skip=${skipValue}`, {
@@ -72,9 +72,9 @@ export default function CPFavourites() {
             'Accept': 'application/json',
           },
         });
-  
+
         const carparkData = response.data.value;
-  
+
         if (carparkData.length > 0) {
           allCarParks = allCarParks.concat(carparkData);
           skipValue += batchSize;
@@ -82,10 +82,10 @@ export default function CPFavourites() {
           toContinue = false;
         }
       }
-  
+
       const dropdowns = await AsyncStorage.getItem('CPdropdowns');
       const dropdownStates = dropdowns ? JSON.parse(dropdowns) : {};
-  
+
       const user = auth.currentUser;
       let favouriteCarParks = {};
       if (user) {
@@ -96,19 +96,19 @@ export default function CPFavourites() {
           favouriteCarParks = docSnapshot.data().favorites || {};
         }
       }
-  
+
       // Find the specific carpark 
       const carparkData = allCarParks.find(carpark => carpark.Development === carparkName);
-      
+
       if (carparkData) {
         const vehicleTypeMapping = {
           C: 'Cars',
           H: 'Heavy Vehicles',
           Y: 'Motorcycles',
         };
-  
+
         const vehicleTypeOrder = Object.keys(vehicleTypeMapping);
-  
+
         // Create and sort vehicleTypes
         const vehicleTypes = allCarParks
           .filter(carpark => carpark.Development === carparkName)
@@ -117,7 +117,7 @@ export default function CPFavourites() {
             spacesAvailable: carpark.AvailableLots,
           }))
           .sort((a, b) => vehicleTypeOrder.indexOf(a.lotType) - vehicleTypeOrder.indexOf(b.lotType));
-  
+
         return {
           carparkName: carparkData.Development,
           area: carparkData.Area || 'Others',
@@ -129,13 +129,13 @@ export default function CPFavourites() {
           isOpen: !!dropdownStates[carparkData.Development],
         };
       }
-  
+
       return null;
     } catch (error) {
       console.error('Error fetching car park details:', error);
       return null;
     }
-  };  
+  };
 
   const saveDropdowns = async (updatedCarParks) => {
     const dropdowns = updatedCarParks.reduce((acc, carPark) => {
@@ -151,7 +151,7 @@ export default function CPFavourites() {
   const closeAllDropdowns = () => {
     setCarParks(prevCarParks => {
       const updatedCarParks = prevCarParks.map(carPark => ({ ...carPark, isOpen: false }));
-      saveDropdowns(updatedCarParks); 
+      saveDropdowns(updatedCarParks);
       return updatedCarParks;
     });
   };
@@ -175,23 +175,23 @@ export default function CPFavourites() {
       console.error("User is not authenticated.");
       return;
     }
-  
+
     const userId = user.uid;
     const favouriteRef = doc(db, 'users', userId, 'favorites', 'carParks');
-  
+
     try {
       const docSnapshot = await getDoc(favouriteRef);
       let currentFavourites = {};
       if (docSnapshot.exists()) {
         currentFavourites = docSnapshot.data().favorites || {};
       }
-  
+
       if (currentFavourites[carparkName]) {
         delete currentFavourites[carparkName];
-  
+
         await setDoc(favouriteRef, { favorites: currentFavourites });
         console.log('Updated favorites:', currentFavourites);
-  
+
         setFavouriteCarParks(prevCarParks => {
           return prevCarParks.filter(carpark => carpark.carparkName !== carparkName);
         });
@@ -202,8 +202,8 @@ export default function CPFavourites() {
       console.error('Error updating favorites:', error);
     }
   };
-  
-  
+
+
 
 
   if (loading) {
@@ -239,11 +239,11 @@ const Header = ({ closeAllDropdowns }) => {
 
   return (
     <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={handleBackPress}>
-            <Ionicons name="arrow-back" size={28} color="white" />
-        </Pressable>
-        <Text style={styles.headerText}>Favourites</Text>
-        <Ionicons name="chevron-forward" size={28} color="white" />
+      <Pressable style={styles.backButton} onPress={handleBackPress}>
+        <Ionicons name="arrow-back" size={28} color="white" />
+      </Pressable>
+      <Text style={styles.headerText}>Favourites</Text>
+      <Ionicons name="chevron-forward" size={28} color="white" />
     </View>
   );
 };
@@ -332,8 +332,8 @@ const styles = StyleSheet.create({
     color: '#FFFFF0',
     fontSize: 24,
     fontWeight: 'bold',
-    flex: 1, 
-    textAlign: 'center', 
+    flex: 1,
+    textAlign: 'center',
   },
   carParkWrapper: {
     marginBottom: 16,
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   },
   locationBox: {
     flexDirection: 'row',
-    alignItems: 'center', 
+    alignItems: 'center',
     marginBottom: 12,
   },
   loadingContainer: {
@@ -419,6 +419,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 30,
     backgroundColor: '#4682B4',
-    marginLeft: 8, 
+    marginLeft: 8,
   },
 });

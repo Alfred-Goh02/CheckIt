@@ -61,7 +61,7 @@ export default function CPFavouritesTab() {
       let skipValue = 0;
       const batchSize = 500;
       let toContinue = true;
-  
+
       // Fetch all carparks
       while (toContinue) {
         const response = await axios.get(`${process.env.REACT_APP_CARPARK_API_URL}?$skip=${skipValue}`, {
@@ -70,9 +70,9 @@ export default function CPFavouritesTab() {
             'Accept': 'application/json',
           },
         });
-  
+
         const carparkData = response.data.value;
-  
+
         if (carparkData.length > 0) {
           allCarParks = allCarParks.concat(carparkData);
           skipValue += batchSize;
@@ -80,10 +80,10 @@ export default function CPFavouritesTab() {
           toContinue = false;
         }
       }
-  
+
       const dropdowns = await AsyncStorage.getItem('CPdropdowns');
       const dropdownStates = dropdowns ? JSON.parse(dropdowns) : {};
-  
+
       const user = auth.currentUser;
       let favouriteCarParks = {};
       if (user) {
@@ -94,19 +94,19 @@ export default function CPFavouritesTab() {
           favouriteCarParks = docSnapshot.data().favorites || {};
         }
       }
-  
+
       // Find the specific carpark 
       const carparkData = allCarParks.find(carpark => carpark.Development === carparkName);
-      
+
       if (carparkData) {
         const vehicleTypeMapping = {
           C: 'Cars',
           H: 'Heavy Vehicles',
           Y: 'Motorcycles',
         };
-  
+
         const vehicleTypeOrder = Object.keys(vehicleTypeMapping);
-  
+
         // Create and sort vehicleTypes
         const vehicleTypes = allCarParks
           .filter(carpark => carpark.Development === carparkName)
@@ -115,7 +115,7 @@ export default function CPFavouritesTab() {
             spacesAvailable: carpark.AvailableLots,
           }))
           .sort((a, b) => vehicleTypeOrder.indexOf(a.lotType) - vehicleTypeOrder.indexOf(b.lotType));
-  
+
         return {
           carparkName: carparkData.Development,
           area: carparkData.Area || 'Others',
@@ -127,14 +127,14 @@ export default function CPFavouritesTab() {
           isOpen: !!dropdownStates[carparkData.Development],
         };
       }
-  
+
       return null;
     } catch (error) {
       console.error('Error fetching car park details:', error);
       return null;
     }
   };
-  
+
 
   const saveDropdowns = async (updatedCarParks) => {
     const dropdowns = updatedCarParks.reduce((acc, carPark) => {
@@ -150,7 +150,7 @@ export default function CPFavouritesTab() {
   const closeAllDropdowns = () => {
     setCarParks(prevCarParks => {
       const updatedCarParks = prevCarParks.map(carPark => ({ ...carPark, isOpen: false }));
-      saveDropdowns(updatedCarParks); 
+      saveDropdowns(updatedCarParks);
       return updatedCarParks;
     });
   };
@@ -174,23 +174,23 @@ export default function CPFavouritesTab() {
       console.error("User is not authenticated.");
       return;
     }
-  
+
     const userId = user.uid;
     const favouriteRef = doc(db, 'users', userId, 'favorites', 'carParks');
-  
+
     try {
       const docSnapshot = await getDoc(favouriteRef);
       let currentFavourites = {};
       if (docSnapshot.exists()) {
         currentFavourites = docSnapshot.data().favorites || {};
       }
-  
+
       if (currentFavourites[carparkName]) {
         delete currentFavourites[carparkName];
-  
+
         await setDoc(favouriteRef, { favorites: currentFavourites });
         console.log('Updated favorites:', currentFavourites);
-  
+
         setFavouriteCarParks(prevCarParks => {
           return prevCarParks.filter(carpark => carpark.carparkName !== carparkName);
         });
@@ -357,4 +357,3 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 });
-

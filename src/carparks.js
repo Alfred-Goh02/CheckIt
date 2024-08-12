@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,13 +40,13 @@ export default function Carpark() {
   );
 
   // Fetch data from carpark API
-   const fetchData = async () => {
+  const fetchData = async () => {
     try {
       let allCarParks = [];
       let skipValue = 0;
       const batchSize = 500;
       let toContinue = true;
-  
+
       // Fetch all carparks
       while (toContinue) {
         const response = await axios.get(`${process.env.REACT_APP_CARPARK_API_URL}?$skip=${skipValue}`, {
@@ -56,9 +55,9 @@ export default function Carpark() {
             'Accept': 'application/json',
           },
         });
-  
+
         const carparkData = response.data.value;
-  
+
         if (carparkData.length > 0) {
           allCarParks = allCarParks.concat(carparkData);
           skipValue += batchSize;
@@ -66,10 +65,10 @@ export default function Carpark() {
           toContinue = false;
         }
       }
-  
+
       const dropdowns = await AsyncStorage.getItem('CPdropdowns');
       const dropdownStates = dropdowns ? JSON.parse(dropdowns) : {};
-  
+
       // Fetch favorites from Firestore
       const user = auth.currentUser;
       let favouriteCarParks = {};
@@ -81,22 +80,22 @@ export default function Carpark() {
           favouriteCarParks = docSnapshot.data().favorites || {};
         }
       }
-  
+
       // Define vehicle type order
       const vehicleTypeMapping = {
         C: 'Cars',
         H: 'Heavy Vehicles',
         Y: 'Motorcycles',
       };
-  
+
       const vehicleTypeOrder = Object.keys(vehicleTypeMapping);
-  
+
       // Consolidate carparks by name
       const carparkMap = {};
-  
+
       allCarParks.forEach(carpark => {
         const name = carpark.Development;
-  
+
         if (!carparkMap[name]) {
           carparkMap[name] = {
             carparkName: name,
@@ -109,21 +108,21 @@ export default function Carpark() {
             isOpen: !!dropdownStates[name],
           };
         }
-  
+
         carparkMap[name].vehicleTypes.push({
           lotType: carpark.LotType,
           spacesAvailable: carpark.AvailableLots,
         });
       });
-  
+
       // Sort vehicleTypes for each carpark entry
       const formattedCarParks = Object.values(carparkMap).map(carpark => ({
         ...carpark,
-        vehicleTypes: carpark.vehicleTypes.sort((a, b) => 
+        vehicleTypes: carpark.vehicleTypes.sort((a, b) =>
           vehicleTypeOrder.indexOf(a.lotType) - vehicleTypeOrder.indexOf(b.lotType)
         ),
       }));
-  
+
       setCarParks(formattedCarParks);
       setLoading(false);
     } catch (error) {
@@ -131,7 +130,7 @@ export default function Carpark() {
       setLoading(false);
     }
   };
-  
+
 
   // Get user's current location
   const getLocation = async () => {
@@ -155,14 +154,18 @@ export default function Carpark() {
     }
 
     const { latitude, longitude } = location.coords;
-    const filteredCarParks = carParks.filter(carpark => {
-      const [carparkLat, carparkLon] = carpark.location.split(' ').map(Number);
-      const distance = getDistance(latitude, longitude, carparkLat, carparkLon);
-      return distance <= 5; // Filter carparks within 5km radius
-    });
+    const nearbyCarparks = carParks
+      .map(carpark => {
+        const [carparkLat, carparkLon] = carpark.location.split(' ').map(Number);
+        const distance = getDistance(latitude, longitude, carparkLat, carparkLon);
+        return { ...carpark, distance };
+      })
+      .filter(carpark => carpark.distance <= 2) // Filter carparks within 2km radius
+      .sort((a, b) => a.distance - b.distance); // Sort by distance
 
-    setCarParks(filteredCarParks);
+    setCarParks(nearbyCarparks);
   };
+
 
   // Calculate distance in km
   const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -253,7 +256,7 @@ export default function Carpark() {
   const closeAllDropdowns = () => {
     setCarParks(prevCarParks => {
       const updatedCarParks = prevCarParks.map(carPark => ({ ...carPark, isOpen: false }));
-      saveDropdowns(updatedCarParks); 
+      saveDropdowns(updatedCarParks);
       return updatedCarParks;
     });
   };
@@ -286,16 +289,8 @@ export default function Carpark() {
       <LinearGradient colors={["#B0E0E6", "#4682B4"]} style={styles.container}>
         <Header closeAllDropdowns={closeAllDropdowns} />
         <View style={styles.locationBox}>
-          <SearchBar 
-            value={searchQuery} 
-            onChangeText={handleSearchChange}
-            testID="search-bar" 
-          />
-          <Pressable 
-            style={styles.loadNearbyButton} 
-            onPress={getLocation}
-            testID="load-nearby-button"
-          >
+          <SearchBar value={searchQuery} onChangeText={handleSearchChange} />
+          <Pressable style={styles.loadNearbyButton} onPress={getLocation}>
             <Ionicons name="location-sharp" size={34} color="white" />
           </Pressable>
         </View>
@@ -304,19 +299,15 @@ export default function Carpark() {
           toggleFavourite={toggleFavourite}
           toggleDropdown={toggleDropdown}
           fetchData={fetchData}
-          testID="carpark-list"
         />
         {filteredCarParks.length > displayedCarParks.length && (
-          <Button 
-            title="Load More" 
-            onPress={handleLoadMore}
-            testID="load-more-button"
-          />
+          <Button title="Load More" onPress={handleLoadMore} />
         )}
       </LinearGradient>
     </ScrollView>
   );
 }
+
 
 // Header component
 const Header = ({ closeAllDropdowns }) => {
@@ -334,28 +325,21 @@ const Header = ({ closeAllDropdowns }) => {
 
   return (
     <View style={styles.header}>
-      <Pressable 
-        style={styles.backButton} 
-        onPress={handleBackPress}
-        testID="back-button"
-      >
+      <Pressable style={styles.backButton} onPress={handleBackPress}>
         <Ionicons name="arrow-back" size={28} color="white" />
       </Pressable>
-      <Text style={styles.headerText} testID="header-text">Car Parks</Text>
+      <Text style={styles.headerText}>Car Parks</Text>
       <Ionicons name="chevron-forward" size={28} color="white" />
-      <Pressable 
-        style={styles.favoritesButton} 
-        onPress={handleFavoritesPress}
-        testID="favorites-button"
-      >
+      <Pressable style={styles.favoritesButton} onPress={handleFavoritesPress}>
         <Ionicons name="heart" size={30} color="white" />
       </Pressable>
     </View>
   );
 };
 
+
 // List component to display car parks
-export const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchData }) => {
+const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchData }) => {
   // mapping lotTypes
   const lotTypeMapping = {
     C: 'Cars',
@@ -372,30 +356,18 @@ export const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchDa
   }
 
   return (
-    <View testID="carpark-list">
+    <View>
       {carParks.map((carPark, index) => (
         <View key={index} style={styles.carParkWrapper}>
           <View style={styles.carParkContainer}>
-            <Pressable 
-              style={styles.iconButton} 
-              onPress={() => toggleFavourite(carPark.carparkName)}
-              testID={`favourite-icon-${carPark.carparkName}`}
-            >
+            <Pressable style={styles.iconButton} onPress={() => toggleFavourite(carPark.carparkName)}>
               <HeartIcon filled={carPark.isFavourite} />
             </Pressable>
-            <Pressable 
-              style={styles.carParkDetails} 
-              onPress={() => toggleDropdown(carPark.carparkName)}
-              testID={`carpark-details-${carPark.carparkName}`}
-            >
+            <Pressable style={styles.carParkDetails} onPress={() => toggleDropdown(carPark.carparkName)}>
               <Text style={styles.carParkNumber}>Carpark: {carPark.carparkName}</Text>
               <Text style={styles.shortName}>Area: {carPark.area}</Text>
             </Pressable>
-            <Pressable 
-              style={styles.iconButton} 
-              onPress={fetchData}
-              testID="refresh-button"
-            >
+            <Pressable style={styles.iconButton} onPress={fetchData}>
               <FontAwesome5 name="sync-alt" size={24} color="black" />
             </Pressable>
           </View>
@@ -414,6 +386,7 @@ export const CarParkList = ({ carParks, toggleFavourite, toggleDropdown, fetchDa
     </View>
   );
 };
+
 
 // Heart icon component for favourites
 const HeartIcon = ({ filled }) => {
@@ -436,14 +409,13 @@ const HeartIcon = ({ filled }) => {
 };
 
 // Search bar component
- const SearchBar = ({ value, onChangeText }) => {
+const SearchBar = ({ value, onChangeText }) => {
   return (
     <TextInput
       style={styles.searchBar}
       value={value}
       onChangeText={onChangeText}
       placeholder="Enter carpark name or code..."
-      testID="search-bar-input"
     />
   );
 };
@@ -466,8 +438,8 @@ const styles = StyleSheet.create({
     color: '#FFFFF0',
     fontSize: 24,
     fontWeight: 'bold',
-    flex: 1, 
-    textAlign: 'center', 
+    flex: 1,
+    textAlign: 'center',
   },
   carParkWrapper: {
     marginBottom: 16,
@@ -516,7 +488,7 @@ const styles = StyleSheet.create({
   },
   locationBox: {
     flexDirection: 'row',
-    alignItems: 'center', 
+    alignItems: 'center',
     marginBottom: 12,
   },
   loadingContainer: {
@@ -553,7 +525,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 30,
     backgroundColor: '#4682B4',
-    marginLeft: 8, 
+    marginLeft: 8,
     flexShrink: 0,
   },
 });
